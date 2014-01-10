@@ -2,7 +2,7 @@
 #include <bitset>
 using namespace std;
 
-const int MATRIX_SIZE = 3;
+const int MATRIX_SIZE = 2;
 
 typedef bitset<MATRIX_SIZE*MATRIX_SIZE*MATRIX_SIZE*MATRIX_SIZE> Multiplication_vector;
 
@@ -50,9 +50,11 @@ Matrix_Multiplication_Checker::Matrix_Multiplication_Checker(int length)
     this->length = length;
     this->element_count = this->length * this->length;
     // calculate bit_for_length
+    /*
     this->bit_for_length = 0;
     while (length/=2)
         ++(this->bit_for_length);
+    */
     // calculate r_vectors
     r_vectors = new Multiplication_vector[length*length];
     calculate_r_vectors();
@@ -66,18 +68,18 @@ Matrix_Multiplication_Checker::~Matrix_Multiplication_Checker()
 int Matrix_Multiplication_Checker::get_vector_index(int ai, int aj, int bi, int bj)
 {
     int result = ai;
-    result <<= bit_for_length;
+    result *= length;
     result += aj;
-    result <<= bit_for_length;
+    result *= length;
     result += bi;
-    result <<= bit_for_length;
+    result *= length;
     result += bj;
     return result;
 }
 
 int Matrix_Multiplication_Checker::get_element_index(int i, int j)
 {
-    return ((i << bit_for_length) + j);
+    return ((i*length) + j);
 }
 
 void Matrix_Multiplication_Checker::calculate_r_vectors()
