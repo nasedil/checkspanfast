@@ -27,7 +27,8 @@ class Matrix_Multiplication_Checker
     int m_count;
     int m_length;
     int f_count;
-    vector<int> good_vectors;
+    vector<Multiplication_vector> good_vectors;
+    vector<int> good_vectors_indexes;
 
     Matrix_Multiplication_Checker(int length);
     ~Matrix_Multiplication_Checker();
@@ -181,34 +182,61 @@ void Matrix_Multiplication_Checker::calculate_m_vectors()
 
 bool Matrix_Multiplication_Checker::check_for_good_vectors()
 {
-    good_vectors.clear();
     // for 2x2 matrix multiplication
     for (int c1 = 0; c1 < m_count-2; ++c1)
+	{
+		cout << "\nC1 = " << c1 << "\n";
 		for (int c2 = c1+1; c2 < m_count-1; ++c2)
+		{
+			cout << "c=" << c2;
 			for (int c3 = c2+1; c3 < m_count; ++c3)
 			{
+				cout << ".";
+				//cout << "\t" << c1 << "\t" << c2 << "\t" << c3 << "\n";
+				good_vectors.clear();
+				good_vectors_indexes.clear();
 				vector<Multiplication_vector> n_vectors;
-				// 128  165  9  109  37  62  146
+				// 9  37  62  109  128  146  165
 				n_vectors.push_back(m_vectors[c1]);
 				n_vectors.push_back(m_vectors[c2]);
 				n_vectors.push_back(m_vectors[c3]);
 				for (int i = 0; i < element_count; ++i)
 					n_vectors.push_back(r_vectors[i]);
 				int n_index = 0;
-				int good_count = 0;
 				for (int i = n_index; i < m_count; ++i)
 				{
 					if (gauss_solve(n_vectors, m_vectors[i]))
 					{
-						++good_count;
+						if (good_vectors.size() == 0)
+						{
+							good_vectors.push_back(m_vectors[i]);
+							good_vectors_indexes.push_back(i);
+						}
+						else
+						{
+							if (!gauss_solve(good_vectors,m_vectors[i]))
+							{
+								good_vectors.push_back(m_vectors[i]);
+								good_vectors_indexes.push_back(i);
+							}
+						}
+						if (good_vectors.size() >= f_count)
+							break;
 						//cout << "number " << i << "\n";
 						//output_vector_text(m_vectors[i]);
 						//cout << "\n";
 					}
 				}
-				if (good_count >= f_count)
-					cout << "Found good vectors: " << c1 << " " << c2 << " " << c3 << "(gc = " << good_count << ")\n";
+				if (good_vectors.size() >= f_count)
+				{
+					cout << "\nFound good vectors: ";
+					for (int cc = 0; cc < good_vectors.size(); ++cc)
+						cout << good_vectors_indexes[cc] << " ";
+					cout << "\n";
+				}
 			}
+		}
+	}
 }
 
 void Matrix_Multiplication_Checker::output_vector(Multiplication_vector v)
