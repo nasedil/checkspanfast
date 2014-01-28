@@ -2,6 +2,7 @@
 #include <bitset>
 #include <vector>
 #include <fstream>
+#include <ctime>
 using namespace std;
 
 const int MATRIX_SIZE = 2;
@@ -104,7 +105,7 @@ Matrix_Multiplication_Checker::~Matrix_Multiplication_Checker()
     delete [] m_vectors;
 }
 
-int Matrix_Multiplication_Checker::get_vector_index(int ai, int aj, int bi, int bj)
+inline int Matrix_Multiplication_Checker::get_vector_index(int ai, int aj, int bi, int bj)
 {
     int result = ai;
     result *= length;
@@ -116,7 +117,7 @@ int Matrix_Multiplication_Checker::get_vector_index(int ai, int aj, int bi, int 
     return result;
 }
 
-void Matrix_Multiplication_Checker::decode_indices_from_index(int index, int & ai, int & aj, int & bi, int & bj)
+inline void Matrix_Multiplication_Checker::decode_indices_from_index(int index, int & ai, int & aj, int & bi, int & bj)
 {
     bj = index % length;
     index /= length;
@@ -128,7 +129,7 @@ void Matrix_Multiplication_Checker::decode_indices_from_index(int index, int & a
     return;
 }
 
-int Matrix_Multiplication_Checker::get_vector_index(int a, int b)
+inline int Matrix_Multiplication_Checker::get_vector_index(int a, int b)
 {
     int result = a;
     result *= element_count;
@@ -136,12 +137,12 @@ int Matrix_Multiplication_Checker::get_vector_index(int a, int b)
     return result;
 }
 
-int Matrix_Multiplication_Checker::get_element_index(int i, int j)
+inline int Matrix_Multiplication_Checker::get_element_index(int i, int j)
 {
     return ((i*length) + j);
 }
 
-int Matrix_Multiplication_Checker::get_m_index(int i, int j)
+inline int Matrix_Multiplication_Checker::get_m_index(int i, int j)
 {
     return ((i*m_length) + j);
 }
@@ -182,16 +183,20 @@ void Matrix_Multiplication_Checker::calculate_m_vectors()
 
 bool Matrix_Multiplication_Checker::check_for_good_vectors()
 {
+  clock_t timestamp = clock();
     // for 2x2 matrix multiplication
     for (int c1 = 0; c1 < m_count-2; ++c1)
 	{
-		cout << "\nC1 = " << c1 << "\n";
+		double elapsed_secs = double(clock() - timestamp) / CLOCKS_PER_SEC;
+		timestamp = clock();
+		cout << "time: " << elapsed_secs << "\n";
+		//cout << "\nC1 = " << c1 << "\n";
 		for (int c2 = c1+1; c2 < m_count-1; ++c2)
 		{
-			cout << "c=" << c2;
+			//cout << "c=" << c2;
 			for (int c3 = c2+1; c3 < m_count; ++c3)
 			{
-				cout << ".";
+				//cout << ".";
 				//cout << "\t" << c1 << "\t" << c2 << "\t" << c3 << "\n";
 				good_vectors.clear();
 				good_vectors_indexes.clear();
@@ -229,7 +234,7 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 				}
 				if (good_vectors.size() >= f_count)
 				{
-					cout << "\nFound good vectors: ";
+					cout << "Found good vectors (" << c1 << " " << c2 << " " << c3 << "): ";
 					for (int cc = 0; cc < good_vectors.size(); ++cc)
 						cout << good_vectors_indexes[cc] << " ";
 					cout << "\n";
