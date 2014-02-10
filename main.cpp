@@ -17,6 +17,8 @@ int power(int a, int b);
 bool gauss_solve(vector<Multiplication_vector> a, Multiplication_vector b);
 // finds if there is at least one solution for system of linear equations in a vector form
 bool binary_solve(vector<Multiplication_vector> a, Multiplication_vector b);
+bool binary_solve_recursive(vector<Multiplication_vector> a, Multiplication_vector b);
+bool binary_solve_explore(vector<Multiplication_vector> * a, Multiplication_vector * b, int depth, Multiplication_vector * current);
 
 class Matrix_Multiplication_Checker
 {
@@ -210,7 +212,7 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 				int n_index = 0;
 				for (int i = n_index; i < m_count; ++i)
 				{
-					if (gauss_solve(n_vectors, m_vectors[i]))
+					if (binary_solve_recursive(n_vectors, m_vectors[i]))
 					{
 						if (good_vectors.size() == 0)
 						{
@@ -219,7 +221,7 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 						}
 						else
 						{
-							if (!gauss_solve(good_vectors,m_vectors[i]))
+							if (!binary_solve_recursive(good_vectors,m_vectors[i]))
 							{
 								good_vectors.push_back(m_vectors[i]);
 								good_vectors_indexes.push_back(i);
@@ -344,3 +346,43 @@ bool binary_solve(vector<Multiplication_vector> a, Multiplication_vector b)
     return false;
 }
 
+bool binary_solve_recursive(vector<Multiplication_vector> a, Multiplication_vector b)
+{
+    uint_least64_t depth = a.size()-1;
+    Multiplication_vector * current = new Multiplication_vector();
+    current->reset();
+	bool result = binary_solve_explore(&a, &b, depth, current);
+	//cout << "\n!!!!";
+    delete current;
+    //cout << "\n!!!!";
+    return result;
+}
+
+bool binary_solve_explore(vector<Multiplication_vector> * a, Multiplication_vector * b, int depth, Multiplication_vector * current)
+{
+	//cout << "\n" << depth;
+	if (depth == -1)
+	{
+		//cout << "\nGo up";
+		for (int k = 0; k < 16; ++k)
+			if (current->test(k) != b->test(k))
+				return false;
+		return true;
+		//return ((*current) == (*b));
+	}
+	else
+	{
+		//cout << "\nGo left";
+		bool result = binary_solve_explore(a, b, depth-1, current);
+		if (result)
+			return true;
+		//cout << "\nGo right";
+		Multiplication_vector * current_add = new Multiplication_vector();
+		for (int k = 0; k < 16; ++k)
+			(*current_add)[k] = current->test(k) != (*a)[depth][k];
+		result = binary_solve_explore(a, b, depth-1, current_add);
+		delete current_add;
+		//cout << "\nGo up";
+		return result;
+	}
+}
