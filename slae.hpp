@@ -47,7 +47,7 @@ bool gauss_solve(vector<bitset<N>> a, bitset<N> b)
 			}
         }
         // second, we make all coefficients under a[i][i] equal to 0
-        for (int j = r+1; j < b.size(); ++j) // for all rows (16)
+        for (int j = r+1; j < b.size(); ++j) // for all rows
         {
             if (a[i][j])
             {
@@ -114,7 +114,7 @@ void gauss_presolve(vector<bitset<N>> a, Gauss_Presolve_Data & p)
 			}
         }
         // second, we make all coefficients under a[i][i] equal to 0
-        for (int j = r+1; j < N; ++j) // for all rows (16)
+        for (int j = r+1; j < N; ++j) // for all rows
         {
             if (a[i][j])
             {
