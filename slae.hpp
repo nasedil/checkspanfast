@@ -229,4 +229,41 @@ bool binary_solve_recursive(vector<bitset<N>> a, bitset<N> b)
 
 //=======================================================
 
+template <size_t N>
+bool compare_lexical (const bitset<N> & a, const bitset<N> & b)
+{
+	for (int i = 0; i < N; ++i)
+		if (a[i] < b[i])
+			return true;
+		else if (a[i] > b[i])
+			return false;
+	return true;
+}
+
+template <size_t N>
+bool compare_count (const bitset<N> & a, const bitset<N> & b)
+{
+	return (a.count() < b.count());
+}
+
+template <size_t N>
+bool compare_combined (const bitset<N> & a, const bitset<N> & b)
+{
+	if (a.count() < b.count())
+		return true;
+	else if (a.count() > b.count())
+		return false;
+	else
+	{
+		for (int i = 0; i < N; ++i)
+		if (a[i] > b[i])
+			return true;
+		else if (a[i] < b[i])
+			return false;
+		return true;
+	}
+}
+
+//=======================================================
+
 #endif // SLAE_HPP_INCLUDED

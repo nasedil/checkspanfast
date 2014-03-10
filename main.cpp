@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <ctime>
+#include <algorithm>
 #include "types.hpp"
 #include "slae.hpp"
 using namespace std;
@@ -179,7 +180,9 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 	clock_t timestamp = clock();
 	int_least64_t go_counter = 0;
 	int slau_counter = 0;
-    // for 2x2 matrix multiplication
+	int slau_counter2 = 0;
+	int slau_counter3 = 0;
+    sort(m_vectors, m_vectors+m_count, compare_combined<16>);
     for (int c1 = 0; c1 < m_count-2; ++c1)
 	{
 		double elapsed_secs = double(clock() - timestamp) / CLOCKS_PER_SEC;
@@ -202,17 +205,30 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 				n_vectors.push_back(m_vectors[c1]);
 				n_vectors.push_back(m_vectors[c2]);
 				n_vectors.push_back(m_vectors[c3]);
+				good_vectors.push_back(m_vectors[c1]);
+				good_vectors.push_back(m_vectors[c2]);
+				good_vectors.push_back(m_vectors[c3]);
+				good_vectors_indexes.push_back(c1);
+				good_vectors_indexes.push_back(c2);
+				good_vectors_indexes.push_back(c3);
+				sort(good_vectors.begin(), good_vectors.end(), compare_combined<16>);
 				for (int i = 0; i < element_count; ++i)
 					n_vectors.push_back(r_vectors[i]);
 				int n_index = 0;
+				sort(n_vectors.begin(), n_vectors.end(), compare_combined<16>);
+				//reverse(n_vectors.begin(), n_vectors.end());
 				Gauss_Presolve_Data p;
 				gauss_presolve(n_vectors,p);
 				// statistics
 				slau_counter++;
 				go_counter += p.rows_o.size();
+				continue;
 				// end statistics
 				for (int i = n_index; i < m_count; ++i)
 				{
+					if ((i == c1) || (i == c2) || (i == c3))
+						continue;
+					++slau_counter2;
 					if (gauss_solve(p, m_vectors[i]))
 					{
 						//if (!binary_solve_recursive(n_vectors, m_vectors[i]))
@@ -224,6 +240,8 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 						}
 						else
 						{
+							++slau_counter3;
+							sort(good_vectors.begin(), good_vectors.end(), compare_combined<16>);
 							if (!gauss_solve(good_vectors,m_vectors[i]))
 							{
 								good_vectors.push_back(m_vectors[i]);
@@ -249,7 +267,9 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 		}
 	}
 	long double avg_go = go_counter / (double) slau_counter;
-	cout << "\n" << avg_go << "\n";
+	cout << "\nAvg operations in presolve: " << avg_go << "\n";
+	cout << "\nSlae solved 1: " << slau_counter2 << "\n";
+	cout << "\nSlae solved 2: " << slau_counter3 << "\n";
 }
 
 void Matrix_Multiplication_Checker::output_vector(Bitvector_16 v)
