@@ -1,82 +1,150 @@
 #ifndef MMCHECKER_HPP_INCLUDED
 #define MMCHECKER_HPP_INCLUDED
 
-#include "types.hpp"
 #include "slae.hpp"
 
+template <int N, int D, size_t NM, size_t NMH>
 class Matrix_Multiplication_Checker
 {
 public:
+	typedef bitset<NM> Multiplication_Vector;
+	typedef bitset<NMH> Multiplication_Part_Vector;
     int length;
+    int dimension;
     int element_count;
-    Bitvector_16 * r_vectors;
-    Bitvector_16 * m_vectors;
-    int m_count;
-    int m_length;
-    int f_count;
-    vector<Bitvector_16> good_vectors;
+    Multiplication_Vector * r_vectors; // result vectors
+    Multiplication_Vector * m_vectors; // multiplication vectors
+    int m_count; // number of multiplication vectors
+    int m_length; // number of non-zero linear combinations
+    int f_count; // number of vectors to choose for a basis
+    vector<Multiplication_Vector> good_vectors;
     vector<int> good_vectors_indexes;
 
-    Matrix_Multiplication_Checker(int length);
+    Matrix_Multiplication_Checker();
     ~Matrix_Multiplication_Checker();
 
-    // returns linear index in a bit vector by 4 indexes in matrices
+    // returns linear index in a bit vector by its indexes in matrices
     int get_vector_index(int ai, int aj, int bi, int bj);
-    // returns linear index in a bit vector by 2 indexes in matrices
+    int get_vector_index(int ai, int aj, int ak, int bi, int bj, int bk, int ci, int cj, int ck);
+    // returns linear index in a bit vector by combined indexes in matrices
     int get_vector_index(int a, int b);
-    // returns 4 indices from index
+    int get_vector_index(int a, int b, int c);
+	// returns indices from index
     void decode_indices_from_index(int index, int & ai, int & aj, int & bi, int & bj);
-    // returns linear index of an elementt in a matrix
+    void decode_indices_from_index(int index, int & ai, int & aj, int & ak, int & bi, int & bj, int & bk, int & ci, int & cj, int & ck);
+    // returns linear index of an element in a matrix
     int get_element_index(int i, int j);
-    // returns index of vertar in m
+    int get_element_index(int i, int j, int k);
+    // returns index of vector in m
     int get_m_index(int i, int j);
+    int get_m_index(int i, int j, int k);
     // write result vectors to array
     void calculate_r_vectors();
     // write different multiplication vectors to array
     void calculate_m_vectors();
     // outputs vector to screen
-    void output_vector(Bitvector_16 v);
+    void output_vector(Multiplication_Vector v);
     // outputs vector to screen in letters
-    void output_vector_text(Bitvector_16 v);
+    void output_vector_text(Multiplication_Vector v);
     // finds if there are good vectors (what we want to find)
     bool check_for_good_vectors();
 };
 
 //=======================================================
 
-Matrix_Multiplication_Checker::Matrix_Multiplication_Checker(int length)
+template <int N, int D, size_t NM, size_t NMH>
+Matrix_Multiplication_Checker<N, D, NM, NMH>::Matrix_Multiplication_Checker()
 {
-    this->length = length;
-    this->element_count = this->length * this->length;
+    this->length = N;
+    this->dimension = D;
+    this->element_count = power(this->length, this->dimension);
+    this->f_count = power(length,dimension+1)-1;
     // calculate r_vectors
-    r_vectors = new Bitvector_16[length*length];
+    r_vectors = new Multiplication_Vector[element_count];
     calculate_r_vectors();
+    // calculate m_vectors
     m_length = power(2,element_count)-1;
-    m_count = m_length*m_length;
-    m_vectors = new Bitvector_16[m_count];
+    m_count = power(m_length,dimension);
+    m_vectors = new Multiplication_Vector[m_count];
     calculate_m_vectors();
-    f_count = length*length*length-1;
 }
 
-Matrix_Multiplication_Checker::~Matrix_Multiplication_Checker()
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+Matrix_Multiplication_Checker<N, D, NM, NMH>::~Matrix_Multiplication_Checker()
 {
     delete [] r_vectors;
     delete [] m_vectors;
 }
 
-inline int Matrix_Multiplication_Checker::get_vector_index(int ai, int aj, int bi, int bj)
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+inline int Matrix_Multiplication_Checker<N, D, NM, NMH>::get_vector_index(int ai, int aj, int bi, int bj)
 {
     int result = ai;
     result *= length;
     result += aj;
     result *= length;
+
     result += bi;
     result *= length;
     result += bj;
     return result;
 }
 
-inline void Matrix_Multiplication_Checker::decode_indices_from_index(int index, int & ai, int & aj, int & bi, int & bj)
+template <int N, int D, size_t NM, size_t NMH>
+inline int Matrix_Multiplication_Checker<N, D, NM, NMH>::get_vector_index(int ai, int aj, int ak, int bi, int bj, int bk, int ci, int cj, int ck)
+{
+	int result = ai;
+    result *= length;
+    result += aj;
+    result *= length;
+    result += ak;
+    result *= length;
+
+    result += bi;
+    result *= length;
+    result += bj;
+    result *= length;
+    result += bk;
+    result *= length;
+
+    result += ci;
+    result *= length;
+    result += cj;
+    result *= length;
+    result += ck;
+    return result;
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+inline int Matrix_Multiplication_Checker<N, D, NM, NMH>::get_vector_index(int a, int b)
+{
+    int result = a;
+    result *= element_count;
+    result += b;
+    return result;
+}
+
+template <int N, int D, size_t NM, size_t NMH>
+inline int Matrix_Multiplication_Checker<N, D, NM, NMH>::get_vector_index(int a, int b, int c)
+{
+	int result = a;
+    result *= element_count;
+    result += b;
+    result *= element_count;
+    result += c;
+    return result;
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+inline void Matrix_Multiplication_Checker<N, D, NM, NMH>::decode_indices_from_index(int index, int & ai, int & aj, int & bi, int & bj)
 {
     bj = index % length;
     index /= length;
@@ -88,59 +156,142 @@ inline void Matrix_Multiplication_Checker::decode_indices_from_index(int index, 
     return;
 }
 
-inline int Matrix_Multiplication_Checker::get_vector_index(int a, int b)
+template <int N, int D, size_t NM, size_t NMH>
+inline void Matrix_Multiplication_Checker<N, D, NM, NMH>::decode_indices_from_index(int index, int & ai, int & aj, int & ak, int & bi, int & bj, int & bk, int & ci, int & cj, int & ck)
 {
-    int result = a;
-    result *= element_count;
-    result += b;
-    return result;
+	ck = index % length;
+    index /= length;
+    cj = index % length;
+    index /= length;
+    ci = index % length;
+    index /= length;
+
+    bk = index % length;
+    index /= length;
+    bj = index % length;
+    index /= length;
+    bi = index % length;
+    index /= length;
+
+    ak = index % length;
+    index /= length;
+    aj = index % length;
+    index /= length;
+    ai = index;
+    return;
 }
 
-inline int Matrix_Multiplication_Checker::get_element_index(int i, int j)
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+inline int Matrix_Multiplication_Checker<N, D, NM, NMH>::get_element_index(int i, int j)
 {
     return ((i*length) + j);
 }
 
-inline int Matrix_Multiplication_Checker::get_m_index(int i, int j)
+template <int N, int D, size_t NM, size_t NMH>
+inline int Matrix_Multiplication_Checker<N, D, NM, NMH>::get_element_index(int i, int j, int k)
+{
+	return (((i*length) + j)*length + k);
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+inline int Matrix_Multiplication_Checker<N, D, NM, NMH>::get_m_index(int i, int j)
 {
     return ((i*m_length) + j);
 }
 
-void Matrix_Multiplication_Checker::calculate_r_vectors()
+template <int N, int D, size_t NM, size_t NMH>
+inline int Matrix_Multiplication_Checker<N, D, NM, NMH>::get_m_index(int i, int j, int k)
+{
+	return (((i*m_length) + j)*m_length + k);
+}
+
+//=======================================================
+
+template <>
+void Matrix_Multiplication_Checker<2, 2, 16, 4>::calculate_r_vectors()
 {
     for (int i = 0; i < length; ++i)
         for (int j = 0; j < length; ++j)
         {
             int index = get_element_index(i, j);
             r_vectors[index].reset();
-            for (int k = 0; k < length; ++k)
+            for (int l = 0; l < length; ++l)
             {
-                r_vectors[index][get_vector_index(i, k, k, j)] = 1;
+                r_vectors[index][get_vector_index(i, l, l, j)] = 1;
             }
         }
 }
 
-void Matrix_Multiplication_Checker::calculate_m_vectors()
+template <>
+void Matrix_Multiplication_Checker<2, 3, 512, 8>::calculate_r_vectors()
+{
+    for (int i = 0; i < length; ++i)
+        for (int j = 0; j < length; ++j)
+			for (int k = 0; k < length; ++k)
+			{
+				int index = get_element_index(i, j, k);
+				r_vectors[index].reset();
+				for (int l = 0; l < length; ++l)
+				{
+					r_vectors[index][get_vector_index(i, j, l, i, l, k, l, j, k)] = 1;
+				}
+			}
+}
+
+//=======================================================
+
+template <>
+void Matrix_Multiplication_Checker<2, 2, 16, 4>::calculate_m_vectors()
 {
     for (int i = 1; i < power(2,element_count); ++i)
         for (int j = 1; j < power(2,element_count); ++j)
-        {
-            Bitvector_4 av(i);
-            Bitvector_4 bv(j);
-            int index = get_m_index(i-1, j-1);
-            m_vectors[index].reset();
-            //cout << i << " i= " << av << "\n" << j << " j= " << bv << "\n";
-            for (int k = 0; k < element_count; ++k)
-                for (int l = 0; l < element_count; ++l)
-                {
-                    if (av[k])
-                        if (bv[l])
-                            m_vectors[index].set(get_vector_index(k, l));
-                }
-        }
+		{
+			Multiplication_Part_Vector av(i);
+			Multiplication_Part_Vector bv(j);
+			int index = get_m_index(i-1, j-1);
+			m_vectors[index].reset();
+			for (int k = 0; k < element_count; ++k)
+				for (int l = 0; l < element_count; ++l)
+				{
+					if (av[k])
+						if (bv[l])
+							m_vectors[index].set(get_vector_index(k, l));
+				}
+		}
 }
 
-bool Matrix_Multiplication_Checker::check_for_good_vectors()
+template <>
+void Matrix_Multiplication_Checker<2, 3, 512, 8>::calculate_m_vectors()
+{
+    for (int i = 1; i < power(2,element_count); ++i)
+        for (int j = 1; j < power(2,element_count); ++j)
+			for (int k = 1; k < power(2,element_count); ++k)
+			{
+				Multiplication_Part_Vector av(i);
+				Multiplication_Part_Vector bv(j);
+				Multiplication_Part_Vector cv(k);
+				int index = get_m_index(i-1, j-1, k-1);
+				m_vectors[index].reset();
+				for (int l = 0; l < element_count; ++l)
+					for (int o = 0; o < element_count; ++o)
+						for (int p = 0; p < element_count; ++p)
+						{
+							if (av[l])
+								if (bv[o])
+									if (cv[p])
+										m_vectors[index].set(get_vector_index(l, o, p));
+						}
+			}
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_for_good_vectors()
 {
 	int gvcounter = 0;
 	clock_t timestamp = clock();
@@ -166,7 +317,7 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 				//cout << "\t" << c1 << "\t" << c2 << "\t" << c3 << "\n";
 				good_vectors.clear();
 				good_vectors_indexes.clear();
-				vector<Bitvector_16> n_vectors;
+				vector<Multiplication_Vector> n_vectors;
 				// 9  37  62  109  128  146  165
 				n_vectors.push_back(m_vectors[c1]);
 				n_vectors.push_back(m_vectors[c2]);
@@ -237,15 +388,24 @@ bool Matrix_Multiplication_Checker::check_for_good_vectors()
 	cout << "\nSlae solved 2: " << slau_counter3 << "\n";
 }
 
-void Matrix_Multiplication_Checker::output_vector(Bitvector_16 v)
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::output_vector(Multiplication_Vector v)
 {
+	cout << v;
+	/*
     for (int i = 0; i < v.size(); ++i)
     {
         cout << v[i];
     }
+    */
 }
 
-void Matrix_Multiplication_Checker::output_vector_text(Bitvector_16 v)
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::output_vector_text(Multiplication_Vector v)
 {
     for (int i = 0; i < v.size(); ++i)
     {
