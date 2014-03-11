@@ -1,7 +1,11 @@
 #ifndef MMCHECKER_HPP_INCLUDED
 #define MMCHECKER_HPP_INCLUDED
 
+#include <ctime>
+#include <algorithm>
+#include <fstream>
 #include "slae.hpp"
+#include "utils.hpp"
 
 template <int N, int D, size_t NM, size_t NMH>
 class Matrix_Multiplication_Checker
@@ -19,6 +23,10 @@ public:
     int f_count; // number of vectors to choose for a basis
     vector<Multiplication_Vector> good_vectors;
     vector<int> good_vectors_indexes;
+    vector<Multiplication_Vector> n_vectors;
+    vector<int> n_vectors_indexes;
+
+    Timewatch tw;
 
     Matrix_Multiplication_Checker();
     ~Matrix_Multiplication_Checker();
@@ -47,7 +55,9 @@ public:
     // outputs vector to screen in letters
     void output_vector_text(Multiplication_Vector v);
     // finds if there are good vectors (what we want to find)
+    void add_vector_to_set(int cc);
     bool check_for_good_vectors();
+    bool check_vectors_for_goodness();
 };
 
 //=======================================================
@@ -55,18 +65,30 @@ public:
 template <int N, int D, size_t NM, size_t NMH>
 Matrix_Multiplication_Checker<N, D, NM, NMH>::Matrix_Multiplication_Checker()
 {
+	cout << "MMChecker created.\n";
     this->length = N;
     this->dimension = D;
     this->element_count = power(this->length, this->dimension);
     this->f_count = power(length,dimension+1)-1;
     // calculate r_vectors
+    tw.watch();
     r_vectors = new Multiplication_Vector[element_count];
     calculate_r_vectors();
+    cout << "[" << tw.watch() << " s] Result vectors calculated.\n";
     // calculate m_vectors
     m_length = power(2,element_count)-1;
     m_count = power(m_length,dimension);
     m_vectors = new Multiplication_Vector[m_count];
     calculate_m_vectors();
+    cout << "[" << tw.watch() << " s] Multiplication vectors calculated.\n";
+    // additional calculations
+    sort(m_vectors, m_vectors+m_count, compare_combined<NM>);
+    cout << "[" << tw.watch() << " s] Multiplication vectors sorted.\n";
+	ofstream mvfile("mv.txt");
+	for (int i = 0; i < m_count; ++i)
+		mvfile << m_vectors[i] << "\n";
+	mvfile.close();
+    cout << "[" << tw.watch() << " s] Multiplication vectors stored.\n";
 }
 
 //=======================================================
@@ -271,6 +293,7 @@ void Matrix_Multiplication_Checker<2, 3, 512, 8>::calculate_m_vectors()
         for (int j = 1; j < power(2,element_count); ++j)
 			for (int k = 1; k < power(2,element_count); ++k)
 			{
+				//cout << i << " " << j << " " << k << "\n";
 				Multiplication_Part_Vector av(i);
 				Multiplication_Part_Vector bv(j);
 				Multiplication_Part_Vector cv(k);
@@ -285,107 +308,129 @@ void Matrix_Multiplication_Checker<2, 3, 512, 8>::calculate_m_vectors()
 									if (cv[p])
 										m_vectors[index].set(get_vector_index(l, o, p));
 						}
+				//cout << m_vectors[index] << "\n";
 			}
 }
 
 //=======================================================
 
 template <int N, int D, size_t NM, size_t NMH>
-bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_for_good_vectors()
+bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness()
 {
-	int gvcounter = 0;
-	clock_t timestamp = clock();
-	int_least64_t go_counter = 0;
-	int slau_counter = 0;
-	int slau_counter2 = 0;
-	int slau_counter3 = 0;
-    sort(m_vectors, m_vectors+m_count, compare_combined<16>);
+	cout << ".";
+	cout << "Checking of vectors started.\n";
+	tw.watch();
+	sort(good_vectors.begin(), good_vectors.end(), compare_combined<NM>);
+	for (int i = 0; i < element_count; ++i)
+		n_vectors.push_back(r_vectors[i]);
+	sort(n_vectors.begin(), n_vectors.end(), compare_combined<NM>);
+	cout << "[" << tw.watch() << " s] Vectors sorted.\n";
+	Gauss_Presolve_Data p;
+	gauss_presolve(n_vectors,p);
+	cout << "[" << tw.watch() << " s] Gauss presolve done(" << p.rows_o.size() << " ops).\n";
+	int n_index = 0;
+	for (int i = n_index; i < m_count; ++i)
+	{
+		// TODO: make a tree query here
+		bool is_in = false;
+		for (int oo = 0; oo < n_vectors_indexes.size(); ++oo)
+			if (i == n_vectors_indexes[oo])
+				is_in = true;
+		if (is_in)
+			continue;
+		tw.watch();
+		if (gauss_solve(p, m_vectors[i]))
+		{
+			cout << "[" << tw.watch() << " s] Potential vector (" << (i+1) << " from " << m_count << ") found.\n";
+			tw.watch();
+			if (!gauss_solve(good_vectors,m_vectors[i]))
+			{
+				good_vectors.push_back(m_vectors[i]);
+				good_vectors_indexes.push_back(i);
+				sort(good_vectors.begin(), good_vectors.end(), compare_combined<NM>);
+			}
+			if (good_vectors.size() >= f_count)
+				break;
+			cout << "[" << tw.watch() << " s] Gauss elimination check done.\n";
+		}
+		else
+			cout << "[" << tw.watch() << " s] Vector (" << (i+1) << " from " << m_count << ") discarded.\n";
+	}
+	if (good_vectors.size() >= f_count)
+	{
+		cout << "Found good vectors!!!\n";
+		for (int cc = 0; cc < good_vectors.size(); ++cc)
+			cout << good_vectors_indexes[cc] << " ";
+		cout << "\n";
+		return true;
+	}
+	return false;
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::add_vector_to_set(int cc)
+{
+	n_vectors.push_back(m_vectors[cc]);
+	n_vectors_indexes.push_back(cc);
+	good_vectors.push_back(m_vectors[cc]);
+	good_vectors_indexes.push_back(cc);
+}
+
+//=======================================================
+
+template <>
+bool Matrix_Multiplication_Checker<2, 2, 16, 4>::check_for_good_vectors()
+{
     for (int c1 = 0; c1 < m_count-2; ++c1)
 	{
-		double elapsed_secs = double(clock() - timestamp) / CLOCKS_PER_SEC;
-		timestamp = clock();
-		cout << "time: " << elapsed_secs << "\n";
-		cout << "foundv: " << gvcounter << "\n";
-		gvcounter = 0;
-		//cout << "\nC1 = " << c1 << "\n";
 		for (int c2 = c1+1; c2 < m_count-1; ++c2)
 		{
-			//cout << "c=" << c2;
 			for (int c3 = c2+1; c3 < m_count; ++c3)
 			{
-				//cout << ".";
-				//cout << "\t" << c1 << "\t" << c2 << "\t" << c3 << "\n";
+				// 9  37  62  109  128  146  165
+				n_vectors.clear();
+				n_vectors_indexes.clear();
 				good_vectors.clear();
 				good_vectors_indexes.clear();
-				vector<Multiplication_Vector> n_vectors;
-				// 9  37  62  109  128  146  165
-				n_vectors.push_back(m_vectors[c1]);
-				n_vectors.push_back(m_vectors[c2]);
-				n_vectors.push_back(m_vectors[c3]);
-				good_vectors.push_back(m_vectors[c1]);
-				good_vectors.push_back(m_vectors[c2]);
-				good_vectors.push_back(m_vectors[c3]);
-				good_vectors_indexes.push_back(c1);
-				good_vectors_indexes.push_back(c2);
-				good_vectors_indexes.push_back(c3);
-				sort(good_vectors.begin(), good_vectors.end(), compare_combined<16>);
-				for (int i = 0; i < element_count; ++i)
-					n_vectors.push_back(r_vectors[i]);
-				int n_index = 0;
-				sort(n_vectors.begin(), n_vectors.end(), compare_combined<16>);
-				//reverse(n_vectors.begin(), n_vectors.end());
-				Gauss_Presolve_Data p;
-				gauss_presolve(n_vectors,p);
-				// statistics
-				slau_counter++;
-				go_counter += p.rows_o.size();
-				// end statistics
-				for (int i = n_index; i < m_count; ++i)
-				{
-					if ((i == c1) || (i == c2) || (i == c3))
-						continue;
-					++slau_counter2;
-					if (gauss_solve(p, m_vectors[i]))
-					{
-						//if (!binary_solve_recursive(n_vectors, m_vectors[i]))
-						//	cout << "Error in solvers!\n";
-						if (good_vectors.size() == 0)
-						{
-							good_vectors.push_back(m_vectors[i]);
-							good_vectors_indexes.push_back(i);
-						}
-						else
-						{
-							++slau_counter3;
-							sort(good_vectors.begin(), good_vectors.end(), compare_combined<16>);
-							if (!gauss_solve(good_vectors,m_vectors[i]))
-							{
-								good_vectors.push_back(m_vectors[i]);
-								good_vectors_indexes.push_back(i);
-							}
-						}
-						if (good_vectors.size() >= f_count)
-							break;
-						//cout << "number " << i << "\n";
-						//output_vector_text(m_vectors[i]);
-						//cout << "\n";
-					}
-				}
-				if (good_vectors.size() >= f_count)
-				{
-					cout << "Found good vectors (" << c1 << " " << c2 << " " << c3 << "): ";
-					for (int cc = 0; cc < good_vectors.size(); ++cc)
-						cout << good_vectors_indexes[cc] << " ";
-					cout << "\n";
-					gvcounter++;
-				}
+				add_vector_to_set(c1);
+				add_vector_to_set(c2);
+				add_vector_to_set(c3);
+				if (check_vectors_for_goodness())
+					return true;
 			}
 		}
 	}
-	long double avg_go = go_counter / (double) slau_counter;
-	cout << "\nAvg operations in presolve: " << avg_go << "\n";
-	cout << "\nSlae solved 1: " << slau_counter2 << "\n";
-	cout << "\nSlae solved 2: " << slau_counter3 << "\n";
+	return false;
+}
+
+template <>
+bool Matrix_Multiplication_Checker<2, 3, 512, 8>::check_for_good_vectors()
+{
+    for (int c1 = 0; c1 < m_count-6; ++c1)
+		for (int c2 = c1+1; c2 < m_count-5; ++c2)
+			for (int c3 = c2+1; c3 < m_count-4; ++c3)
+				for (int c4 = c3+1; c4 < m_count-3; ++c4)
+					for (int c5 = c4+1; c5 < m_count-2; ++c5)
+						for (int c6 = c5+1; c6 < m_count-1; ++c6)
+							for (int c7 = c6+1; c7 < m_count; ++c7)
+							{
+								n_vectors.clear();
+								n_vectors_indexes.clear();
+								good_vectors.clear();
+								good_vectors_indexes.clear();
+								add_vector_to_set(c1);
+								add_vector_to_set(c2);
+								add_vector_to_set(c3);
+								add_vector_to_set(c4);
+								add_vector_to_set(c5);
+								add_vector_to_set(c6);
+								add_vector_to_set(c7);
+								if (check_vectors_for_goodness())
+									return true;
+							}
+	return false;
 }
 
 //=======================================================

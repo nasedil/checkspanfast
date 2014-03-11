@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <bitset>
+#include <ctime>
+#include <algorithm>
 #include <boost/dynamic_bitset.hpp>
 
 using namespace std;
