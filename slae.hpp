@@ -6,6 +6,7 @@
 #include <ctime>
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>
+#include "utils.hpp"
 
 using namespace std;
 
@@ -22,7 +23,7 @@ int power(int a, int b)
 //=======================================================
 
 template <size_t N>
-bool gauss_solve(vector<bitset<N>> a, bitset<N> b)
+bool gauss_solve(vector<mm_bitset<N>> a, mm_bitset<N> b)
 {
 	int r = 0;
     for (int i = 0; i < a.size(); ++i) // for all columns
@@ -84,7 +85,7 @@ public:
 };
 
 template <size_t N>
-void gauss_presolve(vector<bitset<N>> a, Gauss_Presolve_Data & p)
+void gauss_presolve(vector<mm_bitset<N>> a, Gauss_Presolve_Data & p)
 {
 	p.n = a.size();
     p.rows_s.clear();
@@ -135,7 +136,7 @@ void gauss_presolve(vector<bitset<N>> a, Gauss_Presolve_Data & p)
 }
 
 template <size_t N>
-bool gauss_solve(Gauss_Presolve_Data & p, bitset<N> b)
+bool gauss_solve(Gauss_Presolve_Data & p, mm_bitset<N> b)
 {
     for (int i = 0; i < p.rows_o.size(); ++i)
     {
@@ -161,14 +162,14 @@ bool gauss_solve(Gauss_Presolve_Data & p, bitset<N> b)
 //=======================================================
 
 template <size_t N>
-bool binary_solve(vector<bitset<N>> a, bitset<N> b)
+bool binary_solve(vector<mm_bitset<N>> a, mm_bitset<N> b)
 {
     uint_least64_t counter;
     uint_least64_t limit = power(2,a.size());
     for (counter = 1; counter < limit; ++counter)
     {
         boost::dynamic_bitset<> x(a.size(),counter);
-        bitset<N> r(0);
+        mm_bitset<N> r(0);
         bool is_good = true;
         // we multiply a by x
         for (int i = 0; i < b.size(); ++i)
@@ -193,7 +194,7 @@ bool binary_solve(vector<bitset<N>> a, bitset<N> b)
 //=======================================================
 
 template <size_t N>
-bool binary_solve_explore(vector<bitset<N>> * a, bitset<N> * b, int depth, bitset<N> * current)
+bool binary_solve_explore(vector<mm_bitset<N>> * a, mm_bitset<N> * b, int depth, mm_bitset<N> * current)
 {
 	//cout << "\n" << depth;
 	if (depth == -1)
@@ -209,7 +210,7 @@ bool binary_solve_explore(vector<bitset<N>> * a, bitset<N> * b, int depth, bitse
 		bool result = binary_solve_explore(a, b, depth-1, current);
 		if (result)
 			return true;
-		bitset<N> * current_add = new bitset<N>();
+		mm_bitset<N> * current_add = new mm_bitset<N>();
 		for (int k = 0; k < N; ++k)
 			(*current_add)[k] = current->test(k) != (*a)[depth][k];
 		result = binary_solve_explore(a, b, depth-1, current_add);
@@ -219,10 +220,10 @@ bool binary_solve_explore(vector<bitset<N>> * a, bitset<N> * b, int depth, bitse
 }
 
 template <size_t N>
-bool binary_solve_recursive(vector<bitset<N>> a, bitset<N> b)
+bool binary_solve_recursive(vector<mm_bitset<N>> a, mm_bitset<N> b)
 {
     uint_least64_t depth = a.size()-1;
-    bitset<N> * current = new bitset<N>();
+    mm_bitset<N> * current = new mm_bitset<N>();
     current->reset();
 	bool result = binary_solve_explore(&a, &b, depth, current);
     delete current;
@@ -232,7 +233,7 @@ bool binary_solve_recursive(vector<bitset<N>> a, bitset<N> b)
 //=======================================================
 
 template <size_t N>
-bool compare_lexical (const bitset<N> & a, const bitset<N> & b)
+bool compare_lexical (const mm_bitset<N> & a, const mm_bitset<N> & b)
 {
 	for (int i = 0; i < N; ++i)
 		if (a[i] < b[i])
@@ -243,13 +244,13 @@ bool compare_lexical (const bitset<N> & a, const bitset<N> & b)
 }
 
 template <size_t N>
-bool compare_count (const bitset<N> & a, const bitset<N> & b)
+bool compare_count (const mm_bitset<N> & a, const mm_bitset<N> & b)
 {
 	return (a.count() < b.count());
 }
 
 template <size_t N>
-bool compare_combined (const bitset<N> & a, const bitset<N> & b)
+bool compare_combined (const mm_bitset<N> & a, const mm_bitset<N> & b)
 {
 	if (a.count() < b.count())
 		return true;
