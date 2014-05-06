@@ -3,6 +3,8 @@
 
 #include <ctime>
 #include <random>
+#include <set>
+#include <vector>
 
 //=======================================================
 
@@ -59,27 +61,113 @@ using mm_bitset = std::bitset<N>;
 
 //=======================================================
 
+class mm_vector_with_properties_options
+{
+public:
+	std::vector<std::set<int>> rnd_sets;
+};
+
 template <size_t N>
 class mm_vector_with_properties
+{
+public:
+	mm_bitset<N> v;
+	int bit_count;
+	static const int rnd_size = N/64;
+	static const int rnd_count = 8;
+	mm_bitset<rnd_size> r;
+	//static const int mask_count = N/32;
+	//int_ mask0[NM/32];
+	//int mask1[NM/32];
+	void calculate_properties(mm_vector_with_properties_options & o);
+	static void make_options(mm_vector_with_properties_options & o);
+};
+
+template <size_t N>
+void mm_vector_with_properties<N>::calculate_properties(mm_vector_with_properties_options & o)
+{
+	bit_count = v.count();
+	for (int i = 0; i < rnd_size; ++i)
 	{
-	public:
-		mm_bitset<N> v;
-		int bit_count;
-		const int mask_count = N/32;
-		//int mask0[NM/32];
-		//int mask1[NM/32];
-
-		void calculate_properties()
+		r.set(i,false);
+		for (std::set<int>::iterator j = o.rnd_sets[i].begin(); j != o.rnd_sets[i].end(); ++j)
 		{
-			bit_count = v.count();
-			/*
-			for (int i = 0; i < mask_count; ++i)
-			{
-
-			}
-			*/
+			r[i] = r[i] != v[*j];
 		}
-	};
+	}
+	/*
+	for (int i = 0; i < mask_count; ++i)
+	{
+
+	}
+	*/
+}
+
+template <size_t N>
+void mm_vector_with_properties<N>::make_options(mm_vector_with_properties_options & o)
+{
+	Random g(0, N-1);
+	for (int i = 0; i < rnd_size; ++i)
+	{
+		std::set<int> c;
+		for (int j = 0; j < rnd_count; ++j)
+			{
+				int n = g.next();
+				while (c.find(n) != c.end())
+					n = g.next();
+				c.insert(n);
+			}
+		o.rnd_sets.push_back(c);
+	}
+}
+
+//=======================================================
+
+template <size_t N>
+class Vectors_Presolve_Data
+{
+public:
+	mm_bitset<N> mand;
+	mm_bitset<N> mor;
+	Vectors_Presolve_Data();
+	void add_vector(const mm_bitset<N> & a);
+	bool check(const mm_bitset<N> & a);
+};
+
+template <size_t N>
+Vectors_Presolve_Data<N>::Vectors_Presolve_Data()
+{
+	mand.set();
+	mor.reset();
+}
+
+template <size_t N>
+void Vectors_Presolve_Data<N>::add_vector(const mm_bitset<N> & a)
+{
+	mand &= a;
+	mor |= a;
+}
+
+template <size_t N>
+bool Vectors_Presolve_Data<N>::check(const mm_bitset<N> & a)
+{
+	if (a.count() > (N/2))
+	{
+		if ((mand & ~a).any())
+			return false;
+		else if ((~mor & a).any())
+			return false;
+		return true;
+	}
+	else
+	{
+		if ((~mor & a).any())
+			return false;
+		else if ((mand & ~a).any())
+			return false;
+		return true;
+	}
+}
 
 //=======================================================
 

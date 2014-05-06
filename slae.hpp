@@ -63,7 +63,7 @@ bool gauss_solve(vector<mm_bitset<N>> a, mm_bitset<N> b)
         }
         ++r;
     }
-    // we chech all i from 7 to 15 for zero coefficients
+    // we check all i from 7 to 15 for zero coefficients
     for (int i = r; i < b.size(); ++i)
     {
         if (b[i])
@@ -233,6 +233,14 @@ bool binary_solve_recursive(vector<mm_bitset<N>> a, mm_bitset<N> b)
 //=======================================================
 
 template <size_t N>
+bool gauss_solve_randomized(vector<mm_vector_with_properties<N>> a, mm_vector_with_properties<N> b)
+{
+	return true;
+}
+
+//=======================================================
+
+template <size_t N>
 bool compare_lexical (const mm_bitset<N> & a, const mm_bitset<N> & b)
 {
 	for (int i = 0; i < N; ++i)
@@ -265,6 +273,94 @@ bool compare_combined (const mm_bitset<N> & a, const mm_bitset<N> & b)
 			return false;
 		return true;
 	}
+}
+
+//=======================================================
+
+template <size_t N>
+class Gauss_WP_Presolve_Data
+{
+public:
+	vector<mm_vector_with_properties<N>> am;
+	vector<int> imi;
+};
+
+template <size_t N>
+bool gauss_wp_presolve(const vector<mm_vector_with_properties<N>> & a, Gauss_WP_Presolve_Data<N> & p)
+{
+	p.am = a;
+	p.imi.clear();
+	/*
+	cout << "\n";
+	for (int i = 0; i < p.am.size(); ++i)
+	cout << "N vector #" << i << " : " << p.am[i].v << " " << p.am[i].r << "\n";
+	*/
+    for (typename vector<mm_vector_with_properties<N>>::iterator i = p.am.begin(); i != p.am.end();) // for all columns
+    {
+    	int k = 0;
+    	while (((k < N) && (!(*i).v[k])) || (find(p.imi.begin(), p.imi.end(), k) != p.imi.end()))
+			++k;
+		if (k == N) // linearly dependent
+		{
+			i = p.am.erase(i);
+			continue;
+		}
+		else // make 0's all items in a row k except for i'th column
+		{
+			for (typename vector<mm_vector_with_properties<N>>::iterator j = p.am.begin(); j != i; ++j)
+			{
+				if ((*j).v[k])
+				{
+					(*j).v ^= (*i).v;
+					(*j).r ^= (*i).r;
+				}
+			}
+			for (typename vector<mm_vector_with_properties<N>>::iterator j = i+1; j != p.am.end(); ++j)
+			{
+				if ((*j).v[k])
+				{
+					(*j).v ^= (*i).v;
+					(*j).r ^= (*i).r;
+				}
+			}
+			p.imi.push_back(k);
+			++i;
+		}
+    }
+    return true;
+}
+
+template <size_t N>
+bool gauss_wp_solve(Gauss_WP_Presolve_Data<N> & p, mm_vector_with_properties<N> & b)
+{
+	mm_vector_with_properties<N> c;
+	c.r.reset();
+	typename vector<mm_vector_with_properties<N>>::iterator j = p.am.begin();
+	for (vector<int>::iterator i = p.imi.begin(); i != p.imi.end(); ++i)
+	{
+		if (b.v[*i])
+			c.r ^= (*j).r;
+		++j;
+	}
+	for (int i = 0; i < c.r.size(); ++i)
+	{
+		if (c.r[i] != b.r[i])
+			return false;
+	}
+	c.v.reset();
+	j = p.am.begin();
+	for (vector<int>::iterator i = p.imi.begin(); i != p.imi.end(); ++i)
+	{
+		if (b.v[*i])
+			c.v ^= (*j).v;
+		++j;
+	}
+	for (int i = 0; i < c.v.size(); ++i)
+	{
+		if (c.v[i] != b.v[i])
+			return false;
+	}
+	return true;
 }
 
 //=======================================================
