@@ -73,7 +73,7 @@ class mm_vector_with_properties
 public:
 	mm_bitset<N> v;
 	int bit_count;
-	static const int rnd_size = N/64;
+	static const int rnd_size = 0;
 	static const int rnd_count = 8;
 	mm_bitset<rnd_size> r;
 	//static const int mask_count = N/32;

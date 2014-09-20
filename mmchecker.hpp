@@ -61,8 +61,13 @@ public:
     bool check_for_good_vectors();
     bool check_for_good_vectors_randomized();
     bool check_vectors_for_goodness();
+    // subroutines for finding good vectors
     void cvfg_precalculate();
     bool cvfg_slae();
+    // testing routines
+    void save_random_samples(int size, const char * filename);
+    void read_samples_and_check(const char * filename, const char * filenameout);
+    bool check_vectors_for_goodness_a1(); // just normal gauss everywhere
 };
 
 //=======================================================
@@ -607,5 +612,95 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::output_vector_text(Multiplica
 }
 
 //=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::save_random_samples(int size, const char * filename)
+{
+	ofstream fout(filename);
+	Random rnd(0, m_count-1);
+	fout << size << "\n";
+	for (int i = 0; i < size; ++i)
+	{
+		clear_sets();
+		for (int i = 0; i < (f_count-element_count); ++i)
+		{
+			int cc = rnd.next();
+			while (n_vectors_indexes.count(cc) > 0)
+			{
+				cc = rnd.next();
+			}
+			add_vector_to_set(cc);
+			fout << cc << " ";
+		}
+		fout << "\n";
+	}
+	fout.close();
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::read_samples_and_check(const char * filenamein, const char * filenameout)
+{
+	ifstream fin(filenamein);
+	ofstream fout(filenameout, std::ios_base::app);
+	fout << "\n ################################### \n";
+	int size;
+	fin >> size;
+	Timewatch timer;
+	double time = 0.0;
+	int gv = 0;
+	for (int i = 0; i < size; ++i)
+	{
+		if (N*D > 5)
+			cout << "working on case " << i << "\n";
+		clear_sets();
+		for (int i = 0; i < (f_count-element_count); ++i)
+		{
+			int cc;
+			fin >> cc;
+			add_vector_to_set(cc);
+		}
+		timer.watch();
+		if (check_vectors_for_goodness_a1())
+			++gv;
+		double curtime = timer.watch();
+		time += curtime;
+		if (N*D > 5)
+			fout << "\t" << i << ": " << curtime << " s\n";
+	}
+	cout << "Found " << gv << " solutions\n";
+	fout << "Total time: " << time << " s (" << (time/size) << " s avg) (found " << gv << " good vectors)\n";
+	fout.close();
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness_a1()
+{
+	for (int i = 0; i < element_count; ++i)
+	{
+		n_vectors.push_back(r_vectors[i].v);
+	}
+	sort(n_vectors.begin(), n_vectors.end(), compare_combined<NM>);
+	for (int i = 0; i < m_count; ++i)
+	{
+		if (gauss_solve(n_vectors, m_vectors[i].v))
+		{
+			if (!gauss_solve(good_vectors, m_vectors[i].v))
+			{
+				good_vectors.push_back(m_vectors[i].v);
+				good_vectors_indexes.insert(i);
+				sort(good_vectors.begin(), good_vectors.end(), compare_combined<NM>);
+			}
+			if (good_vectors.size() >= f_count)
+				break;
+		}
+	}
+	if (good_vectors.size() >= f_count)
+		return true;
+	return false;
+}
 
 #endif // MMCHECKER_HPP_INCLUDED
