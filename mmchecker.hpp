@@ -8,6 +8,16 @@
 #include "slae.hpp"
 #include "utils.hpp"
 
+class Matrix_Multiplication_Statistics
+{
+public:
+	int cases_bad;
+	int cases_good;
+
+	int ones_bad;
+	int ones_good;
+};
+
 template <int N, int D, size_t NM, size_t NMH>
 class Matrix_Multiplication_Checker
 {
@@ -28,6 +38,10 @@ public:
     set<int> n_vectors_indexes;
 
     Timewatch tw;
+
+    ofstream statfile;
+    bool statmode;
+	Matrix_Multiplication_Statistics stats;
 
     Matrix_Multiplication_Checker();
     ~Matrix_Multiplication_Checker();
@@ -68,6 +82,11 @@ public:
     void save_random_samples(int size, const char * filename);
     void read_samples_and_check(const char * filename, const char * filenameout);
     bool check_vectors_for_goodness_a1(); // just normal gauss everywhere
+    // statistics gathering
+    void start_statistics(const char * filename);
+    void end_statistics();
+    void add_stat_good();
+    void add_stat_bad();
 };
 
 //=======================================================
@@ -121,6 +140,8 @@ Matrix_Multiplication_Checker<N, D, NM, NMH>::Matrix_Multiplication_Checker()
 	//	mvfile << m_vectors[i] << "\n";
 	//mvfile.close();
     //cout << "[" << tw.watch() << " s] Multiplication vectors stored.\n";
+
+    statmode = false;
 }
 
 //=======================================================
@@ -357,6 +378,16 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness()
 		cout << i << " ";
 	cout << "} started.\n";
 #endif
+
+	// TODO
+	/*
+	for (set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i)
+	{
+		if (m_vectors[*i].bit_count > 9)
+			return false;
+	}
+	*/
+
 	//tw.watch();
 	//sort(good_vectors.begin(), good_vectors.end(), compare_combined<NM>);
 	vector<mm_vector_with_properties<NM>> nvwp;
@@ -442,11 +473,15 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness()
 			mvfile << *cc << " ";
 		mvfile << "\n";
 #endif
+		if (statmode)
+			add_stat_good();
 		return true;
 	}
 #ifdef output1
 	cout << "[" << tw.watch() << " s] Checkng finished.\n";
 #endif
+	if (statmode)
+		add_stat_bad();
 	return false;
 }
 
@@ -662,7 +697,7 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::read_samples_and_check(const 
 			add_vector_to_set(cc);
 		}
 		timer.watch();
-		if (check_vectors_for_goodness_a1())
+		if (check_vectors_for_goodness())
 			++gv;
 		double curtime = timer.watch();
 		time += curtime;
@@ -702,5 +737,50 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness_a1
 		return true;
 	return false;
 }
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::start_statistics(const char * filename)
+{
+	statfile.open(filename);
+	statmode = true;
+	stats.cases_bad = 0;
+	stats.cases_good = 0;
+	stats.ones_bad = 0;
+	stats.ones_good = 0;
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::end_statistics()
+{
+	statfile.close();
+	statmode = false;
+}
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::add_stat_bad()
+{
+	return;
+}
+
+
+//=======================================================
+
+template <int N, int D, size_t NM, size_t NMH>
+void Matrix_Multiplication_Checker<N, D, NM, NMH>::add_stat_good()
+{
+	for (set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i)
+	{
+		statfile << m_vectors[*i].bit_count << " ";
+	}
+	statfile << "\n";
+}
+
+//=======================================================
 
 #endif // MMCHECKER_HPP_INCLUDED
