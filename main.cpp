@@ -19,11 +19,11 @@ int main()
 
     checker->start_statistics("stats2d.txt");
 
-    //checker->check_for_good_vectors();
+    checker->check_for_good_vectors();
     //checker->check_for_good_vectors_randomized();
 
     //checker->save_random_samples(1000000, "2test1.txt");
-    checker->read_samples_and_check("2test1.txt", "2test1-res.txt");
+    //checker->read_samples_and_check("2test1.txt", "2test1-res.txt");
 
 	checker->end_statistics();
 

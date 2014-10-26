@@ -151,22 +151,9 @@ void Vectors_Presolve_Data<N>::add_vector(const mm_bitset<N> & a)
 template <size_t N>
 bool Vectors_Presolve_Data<N>::check(const mm_bitset<N> & a)
 {
-	if (a.count() > (N/2))
-	{
-		if ((mand & ~a).any())
-			return false;
-		else if ((~mor & a).any())
-			return false;
-		return true;
-	}
-	else
-	{
-		if ((~mor & a).any())
-			return false;
-		else if ((mand & ~a).any())
-			return false;
-		return true;
-	}
+	if ((~mor & a).any())
+		return false;
+	return true;
 }
 
 //=======================================================
