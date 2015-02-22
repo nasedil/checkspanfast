@@ -1,10 +1,12 @@
 #ifndef MMCHECKER_HPP_INCLUDED
 #define MMCHECKER_HPP_INCLUDED
 
-#include <ctime>
 #include <algorithm>
+#include <iostream>
 #include <fstream>
 #include <set>
+#include <vector>
+
 #include "slae.hpp"
 #include "utils.hpp"
 
@@ -32,14 +34,14 @@ public:
     int m_count; // number of multiplication vectors
     int m_length; // number of non-zero linear combinations
     int f_count; // number of vectors to choose for a basis
-    vector<Multiplication_Vector> good_vectors;
-    set<int> good_vectors_indexes;
-    vector<Multiplication_Vector> n_vectors;
-    set<int> n_vectors_indexes;
+    std::vector<Multiplication_Vector> good_vectors;
+    std::set<int> good_vectors_indexes;
+    std::vector<Multiplication_Vector> n_vectors;
+    std::set<int> n_vectors_indexes;
 
     Timewatch tw;
 
-    ofstream statfile;
+    std::ofstream statfile;
     bool statmode;
 	Matrix_Multiplication_Statistics stats;
 
@@ -94,22 +96,13 @@ public:
 template <int N, int D, size_t NM, size_t NMH>
 Matrix_Multiplication_Checker<N, D, NM, NMH>::Matrix_Multiplication_Checker()
 {
-	cout << "MMChecker created.\n";
+	std::cout << "MMChecker created.\n";
     this->length = N;
     this->dimension = D;
     this->element_count = power(this->length, this->dimension);
     this->f_count = power(length,dimension+1)-1;
     mm_vector_with_properties_options o;
     mm_vector_with_properties<NM>::make_options(o);
-    /*
-    for (int i = 0; i < o.rnd_sets.size(); ++i)
-	{
-		cout << "Set #" << i << ": ";
-		for (set<int>::iterator j = o.rnd_sets[i].begin(); j != o.rnd_sets[i].end(); ++j)
-			cout << (*j) << " ";
-		cout << "\n";
-	}
-	*/
     // calculate r_vectors
     tw.watch();
     r_vectors = new mm_vector_with_properties<NM>[element_count];
@@ -117,9 +110,8 @@ Matrix_Multiplication_Checker<N, D, NM, NMH>::Matrix_Multiplication_Checker()
     for (int i = 0; i < element_count; ++i)
 	{
 		r_vectors[i].calculate_properties(o);
-		//cout << "Result vector #" << i << " : " << r_vectors[i].v << " " << r_vectors[i].r << "\n";
 	}
-    cout << "[" << tw.watch() << " s] Result vectors calculated.\n";
+    std::cout << "[" << tw.watch() << " s] Result vectors calculated.\n";
     // calculate m_vectors
     m_length = power(2,element_count)-1;
     m_count = power(m_length,dimension);
@@ -128,18 +120,8 @@ Matrix_Multiplication_Checker<N, D, NM, NMH>::Matrix_Multiplication_Checker()
     for (int i = 0; i < m_count; ++i)
 	{
 		m_vectors[i].calculate_properties(o);
-		//cout << "Mult. vector #" << i << " : " << m_vectors[i].v << " " << m_vectors[i].r << "\n";
 	}
-    cout << "[" << tw.watch() << " s] Multiplication vectors calculated.\n";
-    // additional calculations
-    //sort(m_vectors, m_vectors+m_count, compare_combined<NM>);
-    //cout << "[" << tw.watch() << " s] Multiplication vectors sorted.\n";
-
-	//ofstream mvfile("mv.txt");
-	//for (int i = 0; i < m_count; ++i)
-	//	mvfile << m_vectors[i] << "\n";
-	//mvfile.close();
-    //cout << "[" << tw.watch() << " s] Multiplication vectors stored.\n";
+    std::cout << "[" << tw.watch() << " s] Multiplication vectors calculated.\n";
 
     statmode = false;
 }
@@ -361,7 +343,6 @@ void Matrix_Multiplication_Checker<2, 3, 512, 8>::calculate_m_vectors()
 									if (cv[p])
 										m_vectors[index].v.set(get_vector_index(l, o, p));
 						}
-				//cout << m_vectors[index] << "\n";
 			}
 }
 
@@ -370,106 +351,56 @@ void Matrix_Multiplication_Checker<2, 3, 512, 8>::calculate_m_vectors()
 template <int N, int D, size_t NM, size_t NMH>
 bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness()
 {
-	tw.watch();
-	//cout << ".";
 #ifdef output1
-	cout << "Checking of vectors { ";
+	std::cout << "Checking of vectors { ";
 	for (int i: n_vectors_indexes)
-		cout << i << " ";
-	cout << "} started.\n";
+		std::cout << i << " ";
+	std::cout << "} started.\n";
 #endif
-
-	// TODO
-	/*
-	for (set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i)
-	{
-		if (m_vectors[*i].bit_count > 9)
-			return false;
-	}
-	*/
-
-	//tw.watch();
-	//sort(good_vectors.begin(), good_vectors.end(), compare_combined<NM>);
-	vector<mm_vector_with_properties<NM>> nvwp;
-	vector<mm_vector_with_properties<NM>> gvwp;
-	for (set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i)
+	std::vector<mm_vector_with_properties<NM>> nvwp;
+	std::vector<mm_vector_with_properties<NM>> gvwp;
+	for (std::set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i)
 		nvwp.push_back(m_vectors[*i]);
-	for (set<int>::iterator i = good_vectors_indexes.begin(); i != good_vectors_indexes.end(); ++i)
+	for (std::set<int>::iterator i = good_vectors_indexes.begin(); i != good_vectors_indexes.end(); ++i)
 		gvwp.push_back(m_vectors[*i]);
 	for (int i = 0; i < element_count; ++i)
 	{
 		n_vectors.push_back(r_vectors[i].v);
 		nvwp.push_back(r_vectors[i]);
 	}
-	//sort(n_vectors.begin(), n_vectors.end(), compare_combined<NM>);
-	//cout << "[" << tw.watch() << " s] Vectors sorted.\n";
-	// gauss presolve
-	//Gauss_Presolve_Data p;
-	//gauss_presolve(n_vectors,p);
 	Vectors_Presolve_Data<NM> v;
 	for (int i = 0; i < n_vectors.size(); ++i)
 		v.add_vector(n_vectors[i]);
-	// randomized gauss presolve
 	Gauss_WP_Presolve_Data<NM> pwp;
 	gauss_wp_presolve(nvwp, pwp);
 	Gauss_WP_Presolve_Data<NM> pwpg;
-	/*
-	cout << "Indexes : ";
-	for (int i = 0; i < pwp.imi.size(); ++i)
-		cout << (pwp.imi[i]) << " ";
-	cout << "\n";
-	for (int i = 0; i < pwp.am.size(); ++i)
-		cout << "N vector #" << i << " : " << pwp.am[i].v << " " << pwp.am[i].r << "\n";
-	*/
-	//cout << "[" << tw.watch() << " s] Gauss presolve done(" << p.rows_o.size() << " ops).\n";
-#ifdef output1
-	//cout << "Gauss presolve done(" << p.rows_o.size() << " ops).\n";
-#endif
-	int n_index = 0;
-	for (int i = n_index; i < m_count; ++i)
+	for (int i = 0; i < m_count; ++i)
 	{
-		// TODO: make a tree query here
-		/*
-		if (n_vectors_indexes.count(i) > 0)
-			continue;
-			*/
-		//tw.watch();
 		if (!v.check(m_vectors[i].v))
 			continue;
-		//if (gauss_solve(p, m_vectors[i].v))
 		if (gauss_wp_solve(pwp, m_vectors[i]))
 		{
-			//cout << "[" << tw.watch() << " s] Potential vector (" << (i+1) << " from " << m_count << ") found.\n";
-			//tw.watch();
 			gauss_wp_presolve(gvwp, pwpg);
-			//if (!gauss_solve(good_vectors,m_vectors[i].v))
 			if (!gauss_wp_solve(pwpg, m_vectors[i]))
 			{
 				good_vectors.push_back(m_vectors[i].v);
 				good_vectors_indexes.insert(i);
 				gvwp.push_back(m_vectors[i]);
-				//sort(good_vectors.begin(), good_vectors.end(), compare_combined<NM>);
 			}
 			if (good_vectors.size() >= f_count)
 				break;
-			//cout << "[" << tw.watch() << " s] Gauss elimination check done.\n";
-		}
-		else
-		{
-			//cout << "[" << tw.watch() << " s] Vector (" << (i+1) << " from " << m_count << ") discarded.\n";
 		}
 	}
 	if (good_vectors.size() >= f_count)
 	{
-		cout << "Good vectors found: ";
-		for (set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc)
-			cout << *cc << " ";
-		cout << "\n";
-
+		std::cout << "Good vectors found: ";
+		for (std::set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc)
+			std::cout << *cc << " ";
+		std::cout << "\n";
 #ifdef output2
-		ofstream mvfile("good.txt");
+		std::ofstream mvfile("good.txt");
 		mvfile << "Found good vectors!!!\n";
-		for (set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc)
+		for (std::set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc)
 			mvfile << *cc << " ";
 		mvfile << "\n";
 #endif
@@ -477,9 +408,6 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness()
 			add_stat_good();
 		return true;
 	}
-#ifdef output1
-	cout << "[" << tw.watch() << " s] Checkng finished.\n";
-#endif
 	if (statmode)
 		add_stat_bad();
 	return false;
@@ -528,10 +456,10 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::add_vector_to_set(int cc)
 template <>
 bool Matrix_Multiplication_Checker<2, 2, 16, 4>::check_for_good_vectors()
 {
-	set<set<int>> results;
+	std::set<std::set<int>> results;
     for (int c1 = 0; c1 < m_count-2; ++c1)
 	{
-		cout << c1 << "\n";
+		std::cout << c1 << "\n";
 		for (int c2 = c1+1; c2 < m_count-1; ++c2)
 		{
 			for (int c3 = c2+1; c3 < m_count; ++c3)
@@ -546,12 +474,12 @@ bool Matrix_Multiplication_Checker<2, 2, 16, 4>::check_for_good_vectors()
 			}
 		}
 	}
-	ofstream fout("results2.txt");
+	std::ofstream fout("results2.txt");
 	fout << "Results: " << results.size() << " found solutions.\n";
-	for (set<set<int>>::iterator i = results.begin(); i != results.end(); ++i)
+	for (std::set<std::set<int>>::iterator i = results.begin(); i != results.end(); ++i)
 	{
 		fout << "[ ";
-		for (set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j)
+		for (std::set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j)
 		{
 			fout << (*j) << " ";
 		}
@@ -591,7 +519,7 @@ bool Matrix_Multiplication_Checker<2, 3, 512, 8>::check_for_good_vectors()
 template <int N, int D, size_t NM, size_t NMH>
 bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_for_good_vectors_randomized()
 {
-	ofstream mvfile("mv.txt", std::ios_base::app);
+	std::ofstream mvfile("mv.txt", std::ios_base::app);
 	// TODO read and write file
 	Random rnd(0, m_count-1);
 	while (true)
@@ -621,13 +549,7 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_for_good_vectors_random
 template <int N, int D, size_t NM, size_t NMH>
 void Matrix_Multiplication_Checker<N, D, NM, NMH>::output_vector(Multiplication_Vector v)
 {
-	cout << v;
-	/*
-    for (int i = 0; i < v.size(); ++i)
-    {
-        cout << v[i];
-    }
-    */
+	std::cout << v;
 }
 
 //=======================================================
@@ -641,7 +563,7 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::output_vector_text(Multiplica
         {
             int ai, aj, bi, bj;
             decode_indices_from_index(i, ai, aj, bi, bj);
-            cout << "A" << ai+1 << aj+1 << "B" << bi+1 << bj+1 << " ";
+            std::cout << "A" << ai+1 << aj+1 << "B" << bi+1 << bj+1 << " ";
         }
     }
 }
@@ -651,7 +573,7 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::output_vector_text(Multiplica
 template <int N, int D, size_t NM, size_t NMH>
 void Matrix_Multiplication_Checker<N, D, NM, NMH>::save_random_samples(int size, const char * filename)
 {
-	ofstream fout(filename);
+	std::ofstream fout(filename);
 	Random rnd(0, m_count-1);
 	fout << size << "\n";
 	for (int i = 0; i < size; ++i)
@@ -677,8 +599,8 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::save_random_samples(int size,
 template <int N, int D, size_t NM, size_t NMH>
 void Matrix_Multiplication_Checker<N, D, NM, NMH>::read_samples_and_check(const char * filenamein, const char * filenameout)
 {
-	ifstream fin(filenamein);
-	ofstream fout(filenameout, std::ios_base::app);
+	std::ifstream fin(filenamein);
+	std::ofstream fout(filenameout, std::ios_base::app);
 	fout << "\n ################################### \n";
 	int size;
 	fin >> size;
@@ -688,7 +610,7 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::read_samples_and_check(const 
 	for (int i = 0; i < size; ++i)
 	{
 		if (N*D > 5)
-			cout << "working on case " << i << "\n";
+			std::cout << "working on case " << i << "\n";
 		clear_sets();
 		for (int i = 0; i < (f_count-element_count); ++i)
 		{
@@ -704,7 +626,7 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::read_samples_and_check(const 
 		if (N*D > 5)
 			fout << "\t" << i << ": " << curtime << " s\n";
 	}
-	cout << "Found " << gv << " solutions\n";
+	std::cout << "Found " << gv << " solutions\n";
 	fout << "Total time: " << time << " s (" << (time/size) << " s avg) (found " << gv << " good vectors)\n";
 	fout.close();
 }
@@ -718,7 +640,7 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness_a1
 	{
 		n_vectors.push_back(r_vectors[i].v);
 	}
-	sort(n_vectors.begin(), n_vectors.end(), compare_combined<NM>);
+	std::sort(n_vectors.begin(), n_vectors.end(), compare_combined<NM>);
 	for (int i = 0; i < m_count; ++i)
 	{
 		if (gauss_solve(n_vectors, m_vectors[i].v))
@@ -727,7 +649,7 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness_a1
 			{
 				good_vectors.push_back(m_vectors[i].v);
 				good_vectors_indexes.insert(i);
-				sort(good_vectors.begin(), good_vectors.end(), compare_combined<NM>);
+				std::sort(good_vectors.begin(), good_vectors.end(), compare_combined<NM>);
 			}
 			if (good_vectors.size() >= f_count)
 				break;
@@ -774,7 +696,7 @@ void Matrix_Multiplication_Checker<N, D, NM, NMH>::add_stat_bad()
 template <int N, int D, size_t NM, size_t NMH>
 void Matrix_Multiplication_Checker<N, D, NM, NMH>::add_stat_good()
 {
-	for (set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i)
+	for (std::set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i)
 	{
 		statfile << m_vectors[*i].bit_count << " ";
 	}

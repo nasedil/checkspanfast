@@ -1,16 +1,8 @@
 //#define output2
 //#define output1
 
-#include <iostream>
-#include <bitset>
-#include <vector>
-#include <fstream>
-#include <ctime>
-#include <algorithm>
 #include "slae.hpp"
 #include "mmchecker.hpp"
-
-using namespace std;
 
 int main()
 {

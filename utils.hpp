@@ -5,6 +5,11 @@
 #include <random>
 #include <set>
 #include <vector>
+#include <bitset>
+
+//=======================================================
+
+int power(int a, int b);
 
 //=======================================================
 
@@ -46,7 +51,6 @@ float Timewatch::watch()
 Random::Random(int i, int s) :
 distribution(i,s)
 {
-
 }
 
 int Random::next()
@@ -76,9 +80,6 @@ public:
 	static const int rnd_size = 0;
 	static const int rnd_count = 8;
 	mm_bitset<rnd_size> r;
-	//static const int mask_count = N/32;
-	//int_ mask0[NM/32];
-	//int mask1[NM/32];
 	void calculate_properties(mm_vector_with_properties_options & o);
 	static void make_options(mm_vector_with_properties_options & o);
 };
@@ -95,12 +96,6 @@ void mm_vector_with_properties<N>::calculate_properties(mm_vector_with_propertie
 			r[i] = r[i] != v[*j];
 		}
 	}
-	/*
-	for (int i = 0; i < mask_count; ++i)
-	{
-
-	}
-	*/
 }
 
 template <size_t N>
@@ -127,7 +122,6 @@ template <size_t N>
 class Vectors_Presolve_Data
 {
 public:
-	mm_bitset<N> mand;
 	mm_bitset<N> mor;
 	Vectors_Presolve_Data();
 	void add_vector(const mm_bitset<N> & a);
@@ -137,14 +131,12 @@ public:
 template <size_t N>
 Vectors_Presolve_Data<N>::Vectors_Presolve_Data()
 {
-	mand.set();
 	mor.reset();
 }
 
 template <size_t N>
 void Vectors_Presolve_Data<N>::add_vector(const mm_bitset<N> & a)
 {
-	mand &= a;
 	mor |= a;
 }
 
@@ -154,6 +146,16 @@ bool Vectors_Presolve_Data<N>::check(const mm_bitset<N> & a)
 	if ((~mor & a).any())
 		return false;
 	return true;
+}
+
+//=======================================================
+
+int power(int a, int b)
+{
+    int result = a;
+    while (--b)
+        result *= a;
+    return result;
 }
 
 //=======================================================
