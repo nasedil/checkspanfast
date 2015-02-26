@@ -10,87 +10,82 @@
 #include "slae.hpp"
 #include "utils.hpp"
 
-class Matrix_Multiplication_Statistics
-{
-public:
-	int cases_bad;
-	int cases_good;
+//=======================================================
 
-	int ones_bad;
-	int ones_good;
-};
-
+/**
+ * Main class, calculates all nesessary information
+ * for given template parameters:
+ *
+ * N: size of the cube;
+ * D: dimension of the cube;
+ * NM: number of bits in multiplication vectors ((N^D)^D);
+ * NMH: number of elements in the array (N^D).
+ */
 template <int N, int D, size_t NM, size_t NMH>
 class Matrix_Multiplication_Checker
 {
 public:
-	typedef mm_bitset<NM> Multiplication_Vector;
-	typedef mm_bitset<NMH> Multiplication_Part_Vector;
-    int length;
-    int dimension;
-    int element_count;
+	typedef mm_bitset<NM> Multiplication_Vector; // multiplication vector type
+	typedef mm_bitset<NMH> Multiplication_Part_Vector; // element coefficient type
+    int length; // size of cube (N)
+    int dimension; // dimension of cube (D)
+    int element_count; // number of elements in cube (N^D)
     mm_vector_with_properties<NM> * r_vectors; // result vectors
     mm_vector_with_properties<NM> * m_vectors; // multiplication vectors
-    int m_count; // number of multiplication vectors
-    int m_length; // number of non-zero linear combinations
-    int f_count; // number of vectors to choose for a basis
-    std::vector<Multiplication_Vector> good_vectors;
-    std::set<int> good_vectors_indexes;
-    std::vector<Multiplication_Vector> n_vectors;
-    std::set<int> n_vectors_indexes;
+    int m_count; // number of multiplication vectors = 2^((N^D)*D)
+    int m_length; // number of non-zero linear combinations = 2^((N^D-1)*D)
+    int f_count; // number of vectors to choose for a basis = N^(D+1)-1
+    std::vector<Multiplication_Vector> good_vectors; // set of vectors that are in the current span
+    std::set<int> good_vectors_indexes; // set of indexes for these vectors
+    std::vector<Multiplication_Vector> n_vectors; // set of current chosen vectors
+    std::set<int> n_vectors_indexes; // set of their indexes
+    Timewatch tw; // timer that is used for getting calculation time
 
-    Timewatch tw;
-
-    std::ofstream statfile;
-    bool statmode;
-	Matrix_Multiplication_Statistics stats;
-
+    //=============--- constructors and destructors
     Matrix_Multiplication_Checker();
     ~Matrix_Multiplication_Checker();
 
-    // returns linear index in a bit vector by its indexes in matrices
-    int get_vector_index(int ai, int aj, int bi, int bj);
-    int get_vector_index(int ai, int aj, int ak, int bi, int bj, int bk, int ci, int cj, int ck);
-    // returns linear index in a bit vector by combined indexes in matrices
-    int get_vector_index(int a, int b);
-    int get_vector_index(int a, int b, int c);
-	// returns indices from index
-    void decode_indices_from_index(int index, int & ai, int & aj, int & bi, int & bj);
-    void decode_indices_from_index(int index, int & ai, int & aj, int & ak, int & bi, int & bj, int & bk, int & ci, int & cj, int & ck);
-    // returns linear index of an element in a matrix
-    int get_element_index(int i, int j);
-    int get_element_index(int i, int j, int k);
-    // returns index of vector in m
-    int get_m_index(int i, int j);
-    int get_m_index(int i, int j, int k);
+    //=============--- index operations
+    // return linear index in a bit vector by its indexes in matrices
+    int get_vector_index(int ai, int aj, int bi, int bj); // for 2-dimensianal case
+    int get_vector_index(int ai, int aj, int ak, int bi, int bj, int bk, int ci, int cj, int ck); // for 3-d case
+    // return linear index in a bit vector by combined indexes in matrices
+    int get_vector_index(int a, int b); // for 2-d case
+    int get_vector_index(int a, int b, int c); // for 3-d case
+	// return indices from index
+    void decode_indices_from_index(int index, int & ai, int & aj, int & bi, int & bj); // for 2-d case
+    void decode_indices_from_index(int index, int & ai, int & aj, int & ak, int & bi, int & bj, int & bk, int & ci, int & cj, int & ck); // for 3-d case
+    // return linear index of an element in a matrix
+    int get_element_index(int i, int j); // for 2-d case
+    int get_element_index(int i, int j, int k); // for 3-d case
+    // return index of vector in m
+    int get_m_index(int i, int j); // for 2-d case
+    int get_m_index(int i, int j, int k); // for 3-d case
+
+    //=============--- Initial calculations
     // write result vectors to array
     void calculate_r_vectors();
-    // write different multiplication vectors to array
+    // write multiplication vectors to array
     void calculate_m_vectors();
-    // outputs vector to screen
-    void output_vector(Multiplication_Vector v);
-    // outputs vector to screen in letters
-    void output_vector_text(Multiplication_Vector v);
-    // finds if there are good vectors (what we want to find)
-    void clear_sets();
-    void add_vector_to_set(int cc);
-    bool check_for_good_vectors();
-    bool check_for_good_vectors_randomized();
-    bool check_vectors_for_goodness();
-    // subroutines for finding good vectors
-    void cvfg_precalculate();
-    bool cvfg_slae();
-    // testing routines
-    void save_random_samples(int size, const char * filename);
-    void read_samples_and_check(const char * filename, const char * filenameout);
+
+    //=============--- checking routines
+    void clear_sets(); // clear current sets of vectors
+    void add_vector_to_set(int cc); // add vector to current sets
+    bool check_vectors_for_goodness(); // check current set of vectors
+
+    //=============--- searching for solution
+    bool check_for_good_vectors(); // check all solution space
+    bool check_for_good_vectors_randomized(); // do random walk
+
+    //=============--- utilities
+    void output_vector(Multiplication_Vector v); // output vector to screen
+    void output_vector_text(Multiplication_Vector v); // output vector to screen in letters
+    void save_random_samples(int size, const char * filename); // save random sets to a file (for testing later)
+    void read_samples_and_check(const char * filename, const char * filenameout); // check sets from a file
     bool check_vectors_for_goodness_a1(); // just normal gauss everywhere
-    // statistics gathering
-    void start_statistics(const char * filename);
-    void end_statistics();
-    void add_stat_good();
-    void add_stat_bad();
 };
 
+//=======================================================
 //=======================================================
 
 template <int N, int D, size_t NM, size_t NMH>
@@ -122,8 +117,6 @@ Matrix_Multiplication_Checker<N, D, NM, NMH>::Matrix_Multiplication_Checker()
 		m_vectors[i].calculate_properties(o);
 	}
     std::cout << "[" << tw.watch() << " s] Multiplication vectors calculated.\n";
-
-    statmode = false;
 }
 
 //=======================================================
@@ -404,29 +397,9 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness()
 			mvfile << *cc << " ";
 		mvfile << "\n";
 #endif
-		if (statmode)
-			add_stat_good();
 		return true;
 	}
-	if (statmode)
-		add_stat_bad();
 	return false;
-}
-
-//=======================================================
-
-template <int N, int D, size_t NM, size_t NMH>
-void Matrix_Multiplication_Checker<N, D, NM, NMH>::cvfg_precalculate()
-{
-	return;
-}
-
-//=======================================================
-
-template <int N, int D, size_t NM, size_t NMH>
-bool Matrix_Multiplication_Checker<N, D, NM, NMH>::cvfg_slae()
-{
-	return true;
 }
 
 //=======================================================
@@ -658,49 +631,6 @@ bool Matrix_Multiplication_Checker<N, D, NM, NMH>::check_vectors_for_goodness_a1
 	if (good_vectors.size() >= f_count)
 		return true;
 	return false;
-}
-
-//=======================================================
-
-template <int N, int D, size_t NM, size_t NMH>
-void Matrix_Multiplication_Checker<N, D, NM, NMH>::start_statistics(const char * filename)
-{
-	statfile.open(filename);
-	statmode = true;
-	stats.cases_bad = 0;
-	stats.cases_good = 0;
-	stats.ones_bad = 0;
-	stats.ones_good = 0;
-}
-
-//=======================================================
-
-template <int N, int D, size_t NM, size_t NMH>
-void Matrix_Multiplication_Checker<N, D, NM, NMH>::end_statistics()
-{
-	statfile.close();
-	statmode = false;
-}
-
-//=======================================================
-
-template <int N, int D, size_t NM, size_t NMH>
-void Matrix_Multiplication_Checker<N, D, NM, NMH>::add_stat_bad()
-{
-	return;
-}
-
-
-//=======================================================
-
-template <int N, int D, size_t NM, size_t NMH>
-void Matrix_Multiplication_Checker<N, D, NM, NMH>::add_stat_good()
-{
-	for (std::set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i)
-	{
-		statfile << m_vectors[*i].bit_count << " ";
-	}
-	statfile << "\n";
 }
 
 //=======================================================
