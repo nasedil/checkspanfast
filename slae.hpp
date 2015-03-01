@@ -1,17 +1,37 @@
+/**
+ * @file slae.hpp:  System of Linear Algebraic Equations utilities.
+ *
+ * This module contains functions for solving SLAE,
+ * particularly for Cube Product Strassen-like algorithm finding.
+ *
+ * @author Eugene Petkevich
+ * @version pre-alpha
+ */
+
 #ifndef SLAE_HPP_INCLUDED
 #define SLAE_HPP_INCLUDED
 
 #include <vector>
+
 #include <boost/dynamic_bitset.hpp>
 
 #include "utils.hpp"
 
-//=======================================================
+//=============================================================================
 
+/**
+ * Sovle SLAE by Gaussian elimination.
+ *
+ * @param a: the coefficient matrix;
+ * @param b: the resulting vector;
+ *
+ * @return if there is a solution.
+ */
 template <size_t N>
-bool gauss_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
+bool
+gauss_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
 {
-	int r = 0;
+    int r = 0;
     for (int i = 0; i < a.size(); ++i) // for all columns
     {
         // first we exchange rows if needed, so that a[i][i] = 1
@@ -20,20 +40,20 @@ bool gauss_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
             int k = r+1;
             while ((k < N) && (!a[i][k]))
                 ++k;
-			if (k >= N)
-				continue;
-			else
-			{
-				bool tmp = b[k];
-				b[k] = b[r];
-				b[r] = tmp;
-				for (int l = i; l < a.size(); ++l)
-				{
-					tmp = a[l][k];
-					a[l][k] = a[l][r];
-					a[l][r] = tmp;
-				}
-			}
+            if (k >= N)
+                continue;
+            else
+            {
+                bool tmp = b[k];
+                b[k] = b[r];
+                b[r] = tmp;
+                for (int l = i; l < a.size(); ++l)
+                {
+                    tmp = a[l][k];
+                    a[l][k] = a[l][r];
+                    a[l][r] = tmp;
+                }
+            }
         }
         // second, we make all coefficients under a[i][i] equal to 0
         for (int j = r+1; j < b.size(); ++j) // for all rows
@@ -58,22 +78,35 @@ bool gauss_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
     return true;
 }
 
-//=======================================================
+//=============================================================================
 
+/**
+ * Data for Gaussian elimination presolve.
+ */
 class Gauss_Presolve_Data
 {
 public:
-    size_t n;
+    size_t n; /// Size of the matrix.
     int r;
     std::vector<int> rows_s;
     std::vector<int> rows_d;
     std::vector<bool> rows_o;
 };
 
+/**
+ * Presolve SLAE by Gaussian elimination.
+ *
+ * Collects Gaussian elimination operations that are needed
+ * to selve a SLAE with a specified matrix.
+ *
+ * @param a: the coefficient matrix;
+ * @param p: varuable to store presolve data;
+ */
 template <size_t N>
-void gauss_presolve(std::vector<mm_bitset<N>> a, Gauss_Presolve_Data & p)
+void
+gauss_presolve(std::vector<mm_bitset<N>> a, Gauss_Presolve_Data & p)
 {
-	p.n = a.size();
+    p.n = a.size();
     p.rows_s.clear();
     p.rows_d.clear();
     p.rows_o.clear();
@@ -86,21 +119,21 @@ void gauss_presolve(std::vector<mm_bitset<N>> a, Gauss_Presolve_Data & p)
             int k = r+1;
             while ((k < N) && (!a[i][k]))
                 ++k;
-			if (k >= N)
-				continue;
-			else
-			{
-				bool tmp;
-				p.rows_s.push_back(r);
-				p.rows_d.push_back(k);
-				p.rows_o.push_back(true);
-				for (int l = i; l < a.size(); ++l)
-				{
-					tmp = a[l][k];
-					a[l][k] = a[l][r];
-					a[l][r] = tmp;
-				}
-			}
+            if (k >= N)
+                continue;
+            else
+            {
+                bool tmp;
+                p.rows_s.push_back(r);
+                p.rows_d.push_back(k);
+                p.rows_o.push_back(true);
+                for (int l = i; l < a.size(); ++l)
+                {
+                    tmp = a[l][k];
+                    a[l][k] = a[l][r];
+                    a[l][r] = tmp;
+                }
+            }
         }
         // second, we make all coefficients under a[i][i] equal to 0
         for (int j = r+1; j < N; ++j) // for all rows
@@ -121,21 +154,30 @@ void gauss_presolve(std::vector<mm_bitset<N>> a, Gauss_Presolve_Data & p)
     p.r = r;
 }
 
+/**
+ * Sovle SLAE by Gaussian elimination using precomputed data.
+ *
+ * @param p: the presolve data;
+ * @param b: the resulting vector;
+ *
+ * @return if there is a solution.
+ */
 template <size_t N>
-bool gauss_solve(Gauss_Presolve_Data & p, mm_bitset<N> b)
+bool
+gauss_solve(Gauss_Presolve_Data & p, mm_bitset<N> b)
 {
     for (int i = 0; i < p.rows_o.size(); ++i)
     {
-    	if (p.rows_o[i])
-		{
-			bool tmp = b[p.rows_s[i]];
-			b[p.rows_s[i]] = b[p.rows_d[i]];
-			b[p.rows_d[i]] = tmp;
-		}
-		else
-		{
-			b[p.rows_d[i]] = (b[p.rows_d[i]] != b[p.rows_s[i]]);
-		}
+        if (p.rows_o[i])
+        {
+            bool tmp = b[p.rows_s[i]];
+            b[p.rows_s[i]] = b[p.rows_d[i]];
+            b[p.rows_d[i]] = tmp;
+        }
+        else
+        {
+            b[p.rows_d[i]] = (b[p.rows_d[i]] != b[p.rows_s[i]]);
+        }
     }
     for (int i = p.r; i < b.size(); ++i)
     {
@@ -145,10 +187,19 @@ bool gauss_solve(Gauss_Presolve_Data & p, mm_bitset<N> b)
     return true;
 }
 
-//=======================================================
+//=============================================================================
 
+/**
+ * Solve SLAE by trying all solutions.
+ *
+ * @param a: the coefficient matrix;
+ * @param b: the resulting vector;
+ *
+ * @return if there is a solution.
+ */
 template <size_t N>
-bool binary_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
+bool
+binary_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
 {
     uint_least64_t counter;
     uint_least64_t limit = power(2,a.size());
@@ -177,173 +228,239 @@ bool binary_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
     return false;
 }
 
-//=======================================================
+//=============================================================================
 
+/**
+ * Subroutine for solving SLAE via backtracking.
+ *
+ * @param a: the coefficient matrix;
+ * @param b: the resulting vector;
+ * @param depth: backtracking tree current depth;
+ * @param current: current value of guessed solution.
+ *
+ * @return if there is a solution.
+ */
 template <size_t N>
-bool binary_solve_explore(std::vector<mm_bitset<N>> * a, mm_bitset<N> * b, int depth, mm_bitset<N> * current)
+bool
+binary_solve_explore(std::vector<mm_bitset<N>> * a, mm_bitset<N> * b, int depth, mm_bitset<N> * current)
 {
-	//cout << "\n" << depth;
-	if (depth == -1)
-	{
-		//cout << "\nGo up";
-		for (int k = 0; k < N; ++k)
-			if (current->test(k) != b->test(k))
-				return false;
-		return true;
-	}
-	else
-	{
-		bool result = binary_solve_explore(a, b, depth-1, current);
-		if (result)
-			return true;
-		mm_bitset<N> * current_add = new mm_bitset<N>();
-		for (int k = 0; k < N; ++k)
-			(*current_add)[k] = current->test(k) != (*a)[depth][k];
-		result = binary_solve_explore(a, b, depth-1, current_add);
-		delete current_add;
-		return result;
-	}
+    if (depth == -1)
+    {
+        for (int k = 0; k < N; ++k)
+            if (current->test(k) != b->test(k))
+                return false;
+        return true;
+    }
+    else
+    {
+        bool result = binary_solve_explore(a, b, depth-1, current);
+        if (result)
+            return true;
+        mm_bitset<N> * current_add = new mm_bitset<N>();
+        for (int k = 0; k < N; ++k)
+            (*current_add)[k] = current->test(k) != (*a)[depth][k];
+        result = binary_solve_explore(a, b, depth-1, current_add);
+        delete current_add;
+        return result;
+    }
 }
 
+/**
+ * Solve SLAE by trying solutions via backtracking.
+ *
+ * @param a: the coefficient matrix;
+ * @param b: the resulting vector;
+ *
+ * @return if there is a solution.
+ */
 template <size_t N>
-bool binary_solve_recursive(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
+bool
+binary_solve_recursive(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
 {
     uint_least64_t depth = a.size()-1;
     mm_bitset<N> * current = new mm_bitset<N>();
     current->reset();
-	bool result = binary_solve_explore(&a, &b, depth, current);
+    bool result = binary_solve_explore(&a, &b, depth, current);
     delete current;
     return result;
 }
 
-//=======================================================
+//=============================================================================
 
+/**
+ * TODO
+ */
 template <size_t N>
-bool gauss_solve_randomized(std::vector<mm_vector_with_properties<N>> a, mm_vector_with_properties<N> b)
+bool
+gauss_solve_randomized(std::vector<mm_vector_with_properties<N>> a, mm_vector_with_properties<N> b)
 {
-	return true;
+    return true;
 }
 
-//=======================================================
+//=============================================================================
 
+/**
+ * Compare function to sort bitsets lexicographically.
+ *
+ * @param N: bitset size;
+ */
 template <size_t N>
-bool compare_lexical (const mm_bitset<N> & a, const mm_bitset<N> & b)
+bool
+compare_lexical (const mm_bitset<N> & a, const mm_bitset<N> & b)
 {
-	for (int i = 0; i < N; ++i)
-		if (a[i] < b[i])
-			return true;
-		else if (a[i] > b[i])
-			return false;
-	return true;
+    for (int i = 0; i < N; ++i)
+        if (a[i] < b[i])
+            return true;
+        else if (a[i] > b[i])
+            return false;
+    return true;
 }
 
+/**
+ * Compare function to sort bitsets by number of 1-bits.
+ *
+ * @param N: bitset size;
+ */
 template <size_t N>
-bool compare_count (const mm_bitset<N> & a, const mm_bitset<N> & b)
+bool
+compare_count (const mm_bitset<N> & a, const mm_bitset<N> & b)
 {
-	return (a.count() < b.count());
+    return (a.count() < b.count());
 }
 
+/**
+ * Compare function to sort bitsets by number of bits,
+ * and if it is the same, lexicographically.
+ *
+ * @param N: bitset size;
+ */
 template <size_t N>
-bool compare_combined (const mm_bitset<N> & a, const mm_bitset<N> & b)
+bool
+compare_combined (const mm_bitset<N> & a, const mm_bitset<N> & b)
 {
-	if (a.count() < b.count())
-		return true;
-	else if (a.count() > b.count())
-		return false;
-	else
-	{
-		for (int i = 0; i < N; ++i)
-		if (a[i] > b[i])
-			return true;
-		else if (a[i] < b[i])
-			return false;
-		return true;
-	}
+    if (a.count() < b.count())
+        return true;
+    else if (a.count() > b.count())
+        return false;
+    else
+    {
+        for (int i = 0; i < N; ++i)
+            if (a[i] > b[i])
+                return true;
+            else if (a[i] < b[i])
+                return false;
+        return true;
+    }
 }
 
-//=======================================================
+//=============================================================================
 
+/**
+ * Presolve data for Gaussian elimination variant for solving SLAE.
+ *
+ * @param N: size of result and variable vectors.
+ */
 template <size_t N>
 class Gauss_WP_Presolve_Data
 {
 public:
-	std::vector<mm_vector_with_properties<N>> am;
-	std::vector<int> imi;
+    std::vector<mm_vector_with_properties<N>> am; /// Transformed Matrix.
+    std::vector<int> imi;
 };
 
+/**
+ * Collect operoationsdata for Gaussian elimination variant for solving SLAE.
+ *
+ * @param N: size of result and variable vectors.
+ *
+ * @param a: the coefficient matrix;
+ * @param p: variable to store presolve data.
+ */
 template <size_t N>
-bool gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>> & a, Gauss_WP_Presolve_Data<N> & p)
+bool
+gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>> & a, Gauss_WP_Presolve_Data<N> & p)
 {
-	p.am = a;
-	p.imi.clear();
+    p.am = a;
+    p.imi.clear();
     for (typename std::vector<mm_vector_with_properties<N>>::iterator i = p.am.begin(); i != p.am.end();) // for all columns
     {
-    	int k = 0;
-    	while (((k < N) && (!(*i).v[k])) || (find(p.imi.begin(), p.imi.end(), k) != p.imi.end()))
-			++k;
-		if (k == N) // linearly dependent
-		{
-			i = p.am.erase(i);
-			continue;
-		}
-		else // make 0's all items in a row k except for i'th column
-		{
-			for (typename std::vector<mm_vector_with_properties<N>>::iterator j = p.am.begin(); j != i; ++j)
-			{
-				if ((*j).v[k])
-				{
-					(*j).v ^= (*i).v;
-					(*j).r ^= (*i).r;
-				}
-			}
-			for (typename std::vector<mm_vector_with_properties<N>>::iterator j = i+1; j != p.am.end(); ++j)
-			{
-				if ((*j).v[k])
-				{
-					(*j).v ^= (*i).v;
-					(*j).r ^= (*i).r;
-				}
-			}
-			p.imi.push_back(k);
-			++i;
-		}
+        int k = 0;
+        while (((k < N) && (!(*i).v[k])) || (find(p.imi.begin(), p.imi.end(), k) != p.imi.end()))
+            ++k;
+        if (k == N) // linearly dependent
+        {
+            i = p.am.erase(i);
+            continue;
+        }
+        else // make 0's all items in a row k except for i'th column
+        {
+            for (typename std::vector<mm_vector_with_properties<N>>::iterator j = p.am.begin(); j != i; ++j)
+            {
+                if ((*j).v[k])
+                {
+                    (*j).v ^= (*i).v;
+                    (*j).r ^= (*i).r;
+                }
+            }
+            for (typename std::vector<mm_vector_with_properties<N>>::iterator j = i+1; j != p.am.end(); ++j)
+            {
+                if ((*j).v[k])
+                {
+                    (*j).v ^= (*i).v;
+                    (*j).r ^= (*i).r;
+                }
+            }
+            p.imi.push_back(k);
+            ++i;
+        }
     }
     return true;
 }
 
+/**
+ * Sovle SLAE by Gaussian elimination using precomputed data.
+ *
+ * @param N: size of result and variable vectors.
+ *
+ * @param p: the presolve data;
+ * @param b: the resulting vector;
+ *
+ * @return if there is a solution.
+ */
 template <size_t N>
-bool gauss_wp_solve(Gauss_WP_Presolve_Data<N> & p, mm_vector_with_properties<N> & b)
+bool
+gauss_wp_solve(Gauss_WP_Presolve_Data<N> & p, mm_vector_with_properties<N> & b)
 {
-	mm_vector_with_properties<N> c;
-	c.r.reset();
-	typename std::vector<mm_vector_with_properties<N>>::iterator j = p.am.begin();
-	for (std::vector<int>::iterator i = p.imi.begin(); i != p.imi.end(); ++i)
-	{
-		if (b.v[*i])
-			c.r ^= (*j).r;
-		++j;
-	}
-	for (int i = 0; i < c.r.size(); ++i)
-	{
-		if (c.r[i] != b.r[i])
-			return false;
-	}
-	c.v.reset();
-	j = p.am.begin();
-	for (std::vector<int>::iterator i = p.imi.begin(); i != p.imi.end(); ++i)
-	{
-		if (b.v[*i])
-			c.v ^= (*j).v;
-		++j;
-	}
-	for (int i = 0; i < c.v.size(); ++i)
-	{
-		if (c.v[i] != b.v[i])
-			return false;
-	}
-	return true;
+    mm_vector_with_properties<N> c;
+    c.r.reset();
+    typename std::vector<mm_vector_with_properties<N>>::iterator j = p.am.begin();
+    for (std::vector<int>::iterator i = p.imi.begin(); i != p.imi.end(); ++i)
+    {
+        if (b.v[*i])
+            c.r ^= (*j).r;
+        ++j;
+    }
+    for (int i = 0; i < c.r.size(); ++i)
+    {
+        if (c.r[i] != b.r[i])
+            return false;
+    }
+    c.v.reset();
+    j = p.am.begin();
+    for (std::vector<int>::iterator i = p.imi.begin(); i != p.imi.end(); ++i)
+    {
+        if (b.v[*i])
+            c.v ^= (*j).v;
+        ++j;
+    }
+    for (int i = 0; i < c.v.size(); ++i)
+    {
+        if (c.v[i] != b.v[i])
+            return false;
+    }
+    return true;
 }
 
-//=======================================================
+//=============================================================================
 
 #endif // SLAE_HPP_INCLUDED
