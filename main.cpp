@@ -20,12 +20,9 @@
 
 int main(int argc ,char ** argv)
 {
-    if (argc > 1)
-    {
+    if (argc > 1) {
         std::cout << "no arguments supported yet!";
-    }
-    else
-    {
+    } else {
         std::cout << "Cube Product Checker (version pre-alpha)" << std::endl << std::endl
                   << "Usage:  ..." << std::endl << std::endl
                   << "Starting default action..." << std::endl;
@@ -42,5 +39,3 @@ int main(int argc ,char ** argv)
 
     return 0;
 }
-
-

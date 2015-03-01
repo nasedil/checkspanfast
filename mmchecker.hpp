@@ -32,8 +32,7 @@
  * @param NMH: number of elements in the array (N^D).
  */
 template <int N, int D, size_t NM, size_t NMH>
-class Cube_Product_Checker
-{
+class Cube_Product_Checker {
 public:
     typedef mm_bitset<NM> Multiplication_Vector;
     typedef mm_bitset<NMH> Multiplication_Part_Vector;
@@ -57,7 +56,7 @@ public:
 
     //=============--- index operations
     /// return linear index in a bit vector by its indexes in matrices
-    int get_vector_index(int ai, int aj, int bi, int bj); /// for 2-dimensianal case
+    int get_vector_index(int ai, int aj, int bi, int bj); /// for 2-dimensional case
     int get_vector_index(int ai, int aj, int ak, int bi, int bj, int bk, int ci, int cj, int ck); /// for 3-d case
     /// return linear index in a bit vector by combined indexes in matrices
     int get_vector_index(int a, int b); /// for 2-d case
@@ -68,7 +67,7 @@ public:
     /// return linear index of an element in a matrix
     int get_element_index(int i, int j); /// for 2-d case
     int get_element_index(int i, int j, int k); /// for 3-d case
-    /// return index of vector in m
+    /// return index of multiplication vector in the set
     int get_m_index(int i, int j); /// for 2-d case
     int get_m_index(int i, int j, int k); /// for 3-d case
 
@@ -141,21 +140,20 @@ Cube_Product_Checker<N, D, NM, NMH>::
 template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
-init() {
+init()
+{
 #ifdef VERBOSE_OUTPUT
     tw.watch();
 #endif // VERBOSE_OUTPUT
     calculate_r_vectors();
-    for (int i = 0; i < element_count; ++i)
-    {
+    for (int i = 0; i < element_count; ++i) {
         r_vectors[i].calculate_properties(vector_options);
     }
 #ifdef VERBOSE_OUTPUT
     std::cout << "[" << tw.watch() << " s] Result vectors calculated." << std::endl;
 #endif // VERBOSE_OUTPUT
     calculate_m_vectors();
-    for (int i = 0; i < m_count; ++i)
-    {
+    for (int i = 0; i < m_count; ++i) {
         m_vectors[i].calculate_properties(vector_options);
     }
 #ifdef VERBOSE_OUTPUT
@@ -441,16 +439,15 @@ void
 Cube_Product_Checker<2, 2, 16, 4>::
 calculate_r_vectors()
 {
-    for (int i = 0; i < length; ++i)
-        for (int j = 0; j < length; ++j)
-        {
+    for (int i = 0; i < length; ++i) {
+        for (int j = 0; j < length; ++j) {
             int index = get_element_index(i, j);
             r_vectors[index].v.reset();
-            for (int l = 0; l < length; ++l)
-            {
+            for (int l = 0; l < length; ++l) {
                 r_vectors[index].v[get_vector_index(i, l, l, j)] = 1;
             }
         }
+    }
 }
 
 /**
@@ -461,17 +458,17 @@ void
 Cube_Product_Checker<2, 3, 512, 8>::
 calculate_r_vectors()
 {
-    for (int i = 0; i < length; ++i)
-        for (int j = 0; j < length; ++j)
-            for (int k = 0; k < length; ++k)
-            {
+    for (int i = 0; i < length; ++i) {
+        for (int j = 0; j < length; ++j) {
+            for (int k = 0; k < length; ++k) {
                 int index = get_element_index(i, j, k);
                 r_vectors[index].v.reset();
-                for (int l = 0; l < length; ++l)
-                {
+                for (int l = 0; l < length; ++l) {
                     r_vectors[index].v[get_vector_index(i, j, l, i, l, k, l, j, k)] = 1;
                 }
             }
+        }
+    }
 }
 
 //=============================================================================
@@ -484,21 +481,21 @@ void
 Cube_Product_Checker<2, 2, 16, 4>::
 calculate_m_vectors()
 {
-    for (int i = 1; i < power(2,element_count); ++i)
-        for (int j = 1; j < power(2,element_count); ++j)
-        {
+    for (int i = 1; i < power(2,element_count); ++i) {
+        for (int j = 1; j < power(2,element_count); ++j) {
             Multiplication_Part_Vector av(i);
             Multiplication_Part_Vector bv(j);
             int index = get_m_index(i-1, j-1);
             m_vectors[index].v.reset();
-            for (int k = 0; k < element_count; ++k)
-                for (int l = 0; l < element_count; ++l)
-                {
+            for (int k = 0; k < element_count; ++k) {
+                for (int l = 0; l < element_count; ++l) {
                     if (av[k] && bv[l]) {
                         m_vectors[index].v.set(get_vector_index(k, l));
                     }
                 }
+            }
         }
+    }
 }
 
 /**
@@ -509,24 +506,26 @@ void
 Cube_Product_Checker<2, 3, 512, 8>::
 calculate_m_vectors()
 {
-    for (int i = 1; i < power(2,element_count); ++i)
-        for (int j = 1; j < power(2,element_count); ++j)
-            for (int k = 1; k < power(2,element_count); ++k)
-            {
+    for (int i = 1; i < power(2,element_count); ++i) {
+        for (int j = 1; j < power(2,element_count); ++j) {
+            for (int k = 1; k < power(2,element_count); ++k) {
                 Multiplication_Part_Vector av(i);
                 Multiplication_Part_Vector bv(j);
                 Multiplication_Part_Vector cv(k);
                 int index = get_m_index(i-1, j-1, k-1);
                 m_vectors[index].v.reset();
-                for (int l = 0; l < element_count; ++l)
-                    for (int o = 0; o < element_count; ++o)
-                        for (int p = 0; p < element_count; ++p)
-                        {
+                for (int l = 0; l < element_count; ++l) {
+                    for (int o = 0; o < element_count; ++o) {
+                        for (int p = 0; p < element_count; ++p) {
                             if (av[l] & bv[o] & cv[p]) {
                                 m_vectors[index].v.set(get_vector_index(l, o, p));
                             }
                         }
+                    }
+                }
             }
+        }
+    }
 }
 
 //=============================================================================
@@ -572,8 +571,9 @@ check_vectors_for_goodness()
 {
 #ifdef VERY_DETAILED_OUTPUT
     std::cout << "Checking of vectors { ";
-    for (int i: n_vectors_indexes)
+    for (int i: n_vectors_indexes) {
         std::cout << i << " ";
+    }
     std::cout << "} has started..." << std::endl;
     tw.watch();
 #endif // VERY_DETAILED_OUTPUT
@@ -587,22 +587,18 @@ check_vectors_for_goodness()
         nvwp.push_back(m_vectors[*i]);
         v.add_vector(m_vectors[*i].v);
     }
-    for (int i = 0; i < element_count; ++i)
-    {
+    for (int i = 0; i < element_count; ++i) {
         nvwp.push_back(r_vectors[i]);
         v.add_vector(r_vectors[i].v);
     }
     gauss_wp_presolve(nvwp, pwp);
     gauss_wp_presolve(gvwp, pwpg);
 
-    for (int i = 0; i < m_count; ++i)
-    {
+    for (int i = 0; i < m_count; ++i) {
         if (!v.check(m_vectors[i].v))
             continue; // discard vector by checking bits
-        if (gauss_wp_solve(pwp, m_vectors[i])) // if vector is in the current span
-        {
-            if (!gauss_wp_solve(pwpg, m_vectors[i])) // if not linearly dependent
-            {
+        if (gauss_wp_solve(pwp, m_vectors[i])) { // if vector is in the current span
+            if (!gauss_wp_solve(pwpg, m_vectors[i])) { // if not linearly dependent
                 good_vectors_indexes.insert(i);
                 gvwp.push_back(m_vectors[i]);
                 gauss_wp_presolve(gvwp, pwpg);
@@ -614,19 +610,20 @@ check_vectors_for_goodness()
 #ifdef VERY_DETAILED_OUTPUT
     std::cout << "  [" << tw.watch() << " s] Done." << std::endl;
 #endif // VERY_DETAILED_OUTPUT
-    if (good_vectors_indexes.size() >= f_count) // there is a solution
-    {
+    if (good_vectors_indexes.size() >= f_count) { // there is a solution
 #ifdef VERBOSE_OUTPUT
         std::cout << "  Good vectors have been found: { ";
-        for (std::set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc)
+        for (std::set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc) {
             std::cout << *cc << " ";
+        }
         std::cout << "}" << std::endl;
 #endif // VERBOSE_OUTPUT
 #ifdef OUTPUT_SOLUTIONS_TO_FILE
         std::ofstream mvfile("good.txt");
         mvfile << "Found good vectors!!!\n";
-        for (std::set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc)
+        for (std::set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc) {
             mvfile << *cc << " ";
+        }
         mvfile << "\n";
 #endif // OUTPUT_SOLUTIONS_TO_FILE
         return true;
@@ -649,29 +646,25 @@ Cube_Product_Checker<2, 2, 16, 4>::
 check_for_good_vectors()
 {
     solutions.clear();
-    for (int c1 = 0; c1 < m_count-2; ++c1)
-    {
-        for (int c2 = c1+1; c2 < m_count-1; ++c2)
-        {
-            for (int c3 = c2+1; c3 < m_count; ++c3)
-            {
+    for (int c1 = 0; c1 < m_count-2; ++c1) {
+        for (int c2 = c1+1; c2 < m_count-1; ++c2) {
+            for (int c3 = c2+1; c3 < m_count; ++c3) {
                 clear_sets();
                 add_vector_to_set(c1);
                 add_vector_to_set(c2);
                 add_vector_to_set(c3);
-                if (check_vectors_for_goodness())
+                if (check_vectors_for_goodness()) {
                     solutions.insert(good_vectors_indexes);
+                }
             }
         }
     }
 #ifdef OUTPUT_STATISTICS
     std::ofstream fout("results2.txt");
     fout << "Results: " << results.size() << " found solutions.\n";
-    for (std::set<std::set<int>>::iterator i = results.begin(); i != results.end(); ++i)
-    {
+    for (std::set<std::set<int>>::iterator i = results.begin(); i != results.end(); ++i) {
         fout << "[ ";
-        for (std::set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j)
-        {
+        for (std::set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j) {
             fout << (*j) << " ";
         }
         fout << "]\n";
@@ -698,8 +691,7 @@ check_for_good_vectors()
                 for (int c4 = c3+1; c4 < m_count-3; ++c4)
                     for (int c5 = c4+1; c5 < m_count-2; ++c5)
                         for (int c6 = c5+1; c6 < m_count-1; ++c6)
-                            for (int c7 = c6+1; c7 < m_count; ++c7)
-                            {
+                            for (int c7 = c6+1; c7 < m_count; ++c7) {
                                 clear_sets();
                                 add_vector_to_set(c1);
                                 add_vector_to_set(c2);
@@ -727,14 +719,11 @@ Cube_Product_Checker<N, D, NM, NMH>::
 check_for_good_vectors_randomized()
 {
     Random rnd(0, m_count-1);
-    while (true)
-    {
+    while (true) {
         clear_sets();
-        for (int i = 0; i < (f_count-element_count); ++i)
-        {
+        for (int i = 0; i < (f_count-element_count); ++i) {
             int cc = rnd.next();
-            while (n_vectors_indexes.count(cc) > 0)
-            {
+            while (n_vectors_indexes.count(cc) > 0) {
                 cc = rnd.next();
             }
             add_vector_to_set(cc);
@@ -772,10 +761,8 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 output_vector_text(Multiplication_Vector v)
 {
-    for (int i = 0; i < v.size(); ++i)
-    {
-        if (v[i])
-        {
+    for (int i = 0; i < v.size(); ++i) {
+        if (v[i]) {
             int ai, aj, bi, bj;
             decode_indices_from_index(i, ai, aj, bi, bj);
             std::cout << "A" << ai+1 << aj+1 << "B" << bi+1 << bj+1 << " ";
@@ -799,14 +786,11 @@ save_random_samples(int size, const char * filename)
     std::ofstream fout(filename);
     Random rnd(0, m_count-1);
     fout << size << "\n";
-    for (int i = 0; i < size; ++i)
-    {
+    for (int i = 0; i < size; ++i) {
         clear_sets();
-        for (int i = 0; i < (f_count-element_count); ++i)
-        {
+        for (int i = 0; i < (f_count-element_count); ++i) {
             int cc = rnd.next();
-            while (n_vectors_indexes.count(cc) > 0)
-            {
+            while (n_vectors_indexes.count(cc) > 0) {
                 cc = rnd.next();
             }
             add_vector_to_set(cc);
@@ -836,24 +820,25 @@ void Cube_Product_Checker<N, D, NM, NMH>::read_samples_and_check(const char * fi
     Timewatch timer;
     double time = 0.0;
     int gv = 0;
-    for (int i = 0; i < size; ++i)
-    {
-        if (N*D > 5)
+    for (int i = 0; i < size; ++i) {
+        if (N*D > 5) {
             std::cout << "working on case " << i << "\n";
+        }
         clear_sets();
-        for (int i = 0; i < (f_count-element_count); ++i)
-        {
+        for (int i = 0; i < (f_count-element_count); ++i) {
             int cc;
             fin >> cc;
             add_vector_to_set(cc);
         }
         timer.watch();
-        if (check_vectors_for_goodness())
+        if (check_vectors_for_goodness()) {
             ++gv;
+        }
         double curtime = timer.watch();
         time += curtime;
-        if (N*D > 5)
+        if (N*D > 5) {
             fout << "\t" << i << ": " << curtime << " s\n";
+        }
     }
     std::cout << "Found " << gv << " solutions\n";
     fout << "Total time: " << time << " s (" << (time/size) << " s avg) (found " << gv << " good vectors)\n";

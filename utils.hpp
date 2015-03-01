@@ -32,8 +32,7 @@ int power(int a, int b); /// Rise a to power of b.
 /**
  * Timewatch class, to measure time intervals.
  */
-class Timewatch
-{
+class Timewatch {
 public:
     clock_t timestamp; /// Timestamp of the last call.
     Timewatch();
@@ -45,8 +44,7 @@ public:
 /**
  * Random class, for integer uniform distribution.
  */
-class Random
-{
+class Random {
 public:
     std::default_random_engine generator;
     std::uniform_int_distribution<int> distribution;
@@ -132,8 +130,7 @@ public:
  * @param N: size of the bitsets.
  */
 template <size_t N>
-class mm_vector_with_properties
-{
+class mm_vector_with_properties {
 public:
     mm_bitset<N> v; /// Main bitset.
     int bit_count;  /// Size of the bitset.
@@ -155,11 +152,9 @@ mm_vector_with_properties<N>::
 calculate_properties(mm_vector_with_properties_options & o)
 {
     bit_count = v.count();
-    for (int i = 0; i < rnd_size; ++i)
-    {
+    for (int i = 0; i < rnd_size; ++i) {
         r.set(i,false);
-        for (std::set<int>::iterator j = o.rnd_sets[i].begin(); j != o.rnd_sets[i].end(); ++j)
-        {
+        for (std::set<int>::iterator j = o.rnd_sets[i].begin(); j != o.rnd_sets[i].end(); ++j) {
             r[i] = r[i] != v[*j];
         }
     }
@@ -176,14 +171,13 @@ mm_vector_with_properties<N>::
 make_options(mm_vector_with_properties_options & o)
 {
     Random g(0, N-1);
-    for (int i = 0; i < rnd_size; ++i)
-    {
+    for (int i = 0; i < rnd_size; ++i) {
         std::set<int> c;
-        for (int j = 0; j < rnd_count; ++j)
-        {
+        for (int j = 0; j < rnd_count; ++j) {
             int n = g.next();
-            while (c.find(n) != c.end())
+            while (c.find(n) != c.end()) {
                 n = g.next();
+            }
             c.insert(n);
         }
         o.rnd_sets.push_back(c);
@@ -262,8 +256,9 @@ int
 power(int a, int b)
 {
     int result = a;
-    while (--b)
+    while (--b) {
         result *= a;
+    }
     return result;
 }
 
