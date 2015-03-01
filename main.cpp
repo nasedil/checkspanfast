@@ -32,6 +32,7 @@ int main(int argc ,char ** argv)
 
         Cube_Product_Checker<2, 2, 16, 4> * checker = new Cube_Product_Checker<2, 2, 16, 4>;
         //Cube_Product_Checker<2, 3, 512, 8> * checker = new Cube_Product_Checker<2, 3, 512, 8>;
+        checker->init();
         checker->check_for_good_vectors();
         //checker->check_for_good_vectors_randomized();
         //checker->save_random_samples(1000000, "2test1.txt");

@@ -40,6 +40,7 @@ public:
     int length; /// size of cube (N)
     int dimension; /// dimension of cube (D)
     int element_count; /// number of elements in cube (N^D)
+    mm_vector_with_properties_options vector_options; /// options for vector properties
     mm_vector_with_properties<NM> * r_vectors; /// result vectors
     mm_vector_with_properties<NM> * m_vectors; /// multiplication vectors
     int m_count; /// number of non-zero multiplication vectors = (2^(N^D)-1)^D
@@ -72,6 +73,7 @@ public:
     int get_m_index(int i, int j, int k); /// for 3-d case
 
     //=============--- Initial calculations
+    void init(); /// calculate all properties
     void calculate_r_vectors(); /// write result vectors to array
     void calculate_m_vectors(); /// write multiplication vectors to array
 
@@ -104,37 +106,17 @@ template <int N, int D, size_t NM, size_t NMH>
 Cube_Product_Checker<N, D, NM, NMH>::
 Cube_Product_Checker()
 {
-#ifdef VERBOSE_OUTPUT
-    std::cout << "Cube Product Checker has been created." << std::endl;
-#endif // VERBOSE_OUTPUT
     length = N;
     dimension = D;
     element_count = power(length, dimension);
     f_count = power(length,dimension+1)-1;
-    mm_vector_with_properties_options o;
-    mm_vector_with_properties<NM>::make_options(o);
-#ifdef VERBOSE_OUTPUT
-    tw.watch();
-#endif // VERBOSE_OUTPUT
     r_vectors = new mm_vector_with_properties<NM>[element_count];
-    calculate_r_vectors();
-    for (int i = 0; i < element_count; ++i)
-    {
-        r_vectors[i].calculate_properties(o);
-    }
-#ifdef VERBOSE_OUTPUT
-    std::cout << "[" << tw.watch() << " s] Result vectors calculated." << std::endl;
-#endif // VERBOSE_OUTPUT
     m_length = power(2,element_count)-1;
     m_count = power(m_length,dimension);
     m_vectors = new mm_vector_with_properties<NM>[m_count];
-    calculate_m_vectors();
-    for (int i = 0; i < m_count; ++i)
-    {
-        m_vectors[i].calculate_properties(o);
-    }
+    mm_vector_with_properties<NM>::make_options(vector_options);
 #ifdef VERBOSE_OUTPUT
-    std::cout << "[" << tw.watch() << " s] Multiplication vectors calculated." << std::endl;
+    std::cout << "Cube Product Checker has been created." << std::endl;
 #endif // VERBOSE_OUTPUT
 }
 
@@ -149,6 +131,36 @@ Cube_Product_Checker<N, D, NM, NMH>::
 {
     delete [] r_vectors;
     delete [] m_vectors;
+}
+
+//=============================================================================
+
+/**
+ * Initialize the object with all necessary properties.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+init() {
+#ifdef VERBOSE_OUTPUT
+    tw.watch();
+#endif // VERBOSE_OUTPUT
+    calculate_r_vectors();
+    for (int i = 0; i < element_count; ++i)
+    {
+        r_vectors[i].calculate_properties(vector_options);
+    }
+#ifdef VERBOSE_OUTPUT
+    std::cout << "[" << tw.watch() << " s] Result vectors calculated." << std::endl;
+#endif // VERBOSE_OUTPUT
+    calculate_m_vectors();
+    for (int i = 0; i < m_count; ++i)
+    {
+        m_vectors[i].calculate_properties(vector_options);
+    }
+#ifdef VERBOSE_OUTPUT
+    std::cout << "[" << tw.watch() << " s] Multiplication vectors calculated." << std::endl;
+#endif // VERBOSE_OUTPUT
 }
 
 //=============================================================================
