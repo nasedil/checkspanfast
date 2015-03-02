@@ -18,7 +18,7 @@
 #include "slae.hpp"
 #include "cpchecker.hpp"
 
-int main(int argc ,char ** argv)
+int main(int argc ,char** argv)
 {
     if (argc > 1) {
         std::cout << "no arguments supported yet!";
@@ -27,8 +27,8 @@ int main(int argc ,char ** argv)
                   << "Usage:  ..." << std::endl << std::endl
                   << "Starting default action..." << std::endl;
 
-        Cube_Product_Checker<2, 2, 16, 4> * checker = new Cube_Product_Checker<2, 2, 16, 4>;
-        //Cube_Product_Checker<2, 3, 512, 8> * checker = new Cube_Product_Checker<2, 3, 512, 8>;
+        Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
+        //Cube_Product_Checker<2, 3, 512, 8>* checker = new Cube_Product_Checker<2, 3, 512, 8>;
         checker->init();
         checker->check_for_good_vectors();
         //checker->check_for_good_vectors_randomized();

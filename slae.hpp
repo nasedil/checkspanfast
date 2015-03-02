@@ -220,7 +220,7 @@ binary_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
  */
 template <size_t N>
 bool
-binary_solve_explore(std::vector<mm_bitset<N>> * a, mm_bitset<N> * b, int depth, mm_bitset<N> * current)
+binary_solve_explore(std::vector<mm_bitset<N>>* a, mm_bitset<N>* b, int depth, mm_bitset<N>* current)
 {
     if (depth == -1) {
         for (int k = 0; k < N; ++k) {
@@ -232,7 +232,7 @@ binary_solve_explore(std::vector<mm_bitset<N>> * a, mm_bitset<N> * b, int depth,
         bool result = binary_solve_explore(a, b, depth-1, current);
         if (result)
             return true;
-        mm_bitset<N> * current_add = new mm_bitset<N>();
+        mm_bitset<N>* current_add = new mm_bitset<N>();
         for (int k = 0; k < N; ++k) {
             (*current_add)[k] = current->test(k) != (*a)[depth][k];
         }
@@ -255,7 +255,7 @@ bool
 binary_solve_recursive(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
 {
     uint_least64_t depth = a.size()-1;
-    mm_bitset<N> * current = new mm_bitset<N>();
+    mm_bitset<N>* current = new mm_bitset<N>();
     current->reset();
     bool result = binary_solve_explore(&a, &b, depth, current);
     delete current;
@@ -283,7 +283,7 @@ gauss_solve_randomized(std::vector<mm_vector_with_properties<N>> a, mm_vector_wi
  */
 template <size_t N>
 bool
-compare_lexical (const mm_bitset<N> & a, const mm_bitset<N> & b)
+compare_lexical (const mm_bitset<N>& a, const mm_bitset<N>& b)
 {
     for (int i = 0; i < N; ++i) {
         if (a[i] < b[i]) {
@@ -302,7 +302,7 @@ compare_lexical (const mm_bitset<N> & a, const mm_bitset<N> & b)
  */
 template <size_t N>
 bool
-compare_count (const mm_bitset<N> & a, const mm_bitset<N> & b)
+compare_count (const mm_bitset<N>& a, const mm_bitset<N>& b)
 {
     return (a.count() < b.count());
 }
@@ -315,7 +315,7 @@ compare_count (const mm_bitset<N> & a, const mm_bitset<N> & b)
  */
 template <size_t N>
 bool
-compare_combined (const mm_bitset<N> & a, const mm_bitset<N> & b)
+compare_combined (const mm_bitset<N>& a, const mm_bitset<N>& b)
 {
     if (a.count() < b.count()) {
         return true;
@@ -357,7 +357,7 @@ public:
  */
 template <size_t N>
 bool
-gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>> & a, Gauss_WP_Presolve_Data<N> & p)
+gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>>& a, Gauss_WP_Presolve_Data<N>& p)
 {
     p.am = a;
     p.imi.clear();
@@ -401,7 +401,7 @@ gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>> & a, Gauss_WP_
  */
 template <size_t N>
 bool
-gauss_wp_solve(Gauss_WP_Presolve_Data<N> & p, mm_vector_with_properties<N> & b)
+gauss_wp_solve(Gauss_WP_Presolve_Data<N>& p, mm_vector_with_properties<N>& b)
 {
     mm_vector_with_properties<N> c;
     c.r.reset();

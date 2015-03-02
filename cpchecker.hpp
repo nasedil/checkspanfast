@@ -40,8 +40,8 @@ public:
     int dimension; /// dimension of cube (D)
     int element_count; /// number of elements in cube (N^D)
     mm_vector_with_properties_options vector_options; /// options for vector properties
-    mm_vector_with_properties<NM> * r_vectors; /// result vectors
-    mm_vector_with_properties<NM> * m_vectors; /// multiplication vectors
+    mm_vector_with_properties<NM>* r_vectors; /// result vectors
+    mm_vector_with_properties<NM>* m_vectors; /// multiplication vectors
     int m_count; /// number of non-zero multiplication vectors = (2^(N^D)-1)^D
     int m_length; /// number non-zero element sums = 2^(N^D)-1
     int f_count; /// number of vectors to choose for a basis = N^(D+1)-1
@@ -62,8 +62,8 @@ public:
     int get_vector_index(int a, int b); /// for 2-d case
     int get_vector_index(int a, int b, int c); /// for 3-d case
     /// return indices from index
-    void decode_indices_from_index(int index, int & ai, int & aj, int & bi, int & bj); /// for 2-d case
-    void decode_indices_from_index(int index, int & ai, int & aj, int & ak, int & bi, int & bj, int & bk, int & ci, int & cj, int & ck); /// for 3-d case
+    void decode_indices_from_index(int index, int& ai, int& aj, int& bi, int& bj); /// for 2-d case
+    void decode_indices_from_index(int index, int& ai, int& aj, int& ak, int& bi, int& bj, int& bk, int& ci, int& cj, int& ck); /// for 3-d case
     /// return linear index of an element in a matrix
     int get_element_index(int i, int j); /// for 2-d case
     int get_element_index(int i, int j, int k); /// for 3-d case
@@ -88,8 +88,8 @@ public:
     //=============--- utilities
     void output_vector(Multiplication_Vector v); /// output vector to screen
     void output_vector_text(Multiplication_Vector v); /// output vector to screen in letters
-    void save_random_samples(int size, const char * filename); /// save random sets to a file (for testing later)
-    void read_samples_and_check(const char * filename, const char * filenameout); /// check sets from a file
+    void save_random_samples(int size, const char* filename); /// save random sets to a file (for testing later)
+    void read_samples_and_check(const char* filename, const char* filenameout); /// check sets from a file
     bool check_vectors_for_goodness_a1(); /// just normal gauss everywhere
 };
 
@@ -294,8 +294,8 @@ template <int N, int D, size_t NM, size_t NMH>
 inline void
 Cube_Product_Checker<N, D, NM, NMH>::
 decode_indices_from_index(int index,
-                          int & ai, int & aj,
-                          int & bi, int & bj)
+                          int& ai, int& aj,
+                          int& bi, int& bj)
 {
     bj = index % length;
     index /= length;
@@ -327,9 +327,9 @@ template <int N, int D, size_t NM, size_t NMH>
 inline void
 Cube_Product_Checker<N, D, NM, NMH>::
 decode_indices_from_index(int index,
-                          int & ai, int & aj, int & ak,
-                          int & bi, int & bj, int & bk,
-                          int & ci, int & cj, int & ck)
+                          int& ai, int& aj, int& ak,
+                          int& bi, int& bj, int& bk,
+                          int& ci, int& cj, int& ck)
 {
     ck = index % length;
     index /= length;
@@ -781,7 +781,7 @@ output_vector_text(Multiplication_Vector v)
 template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
-save_random_samples(int size, const char * filename)
+save_random_samples(int size, const char* filename)
 {
     std::ofstream fout(filename);
     Random rnd(0, m_count-1);
@@ -810,7 +810,7 @@ save_random_samples(int size, const char * filename)
  * @param filenameout: filename for output.
  */
 template <int N, int D, size_t NM, size_t NMH>
-void Cube_Product_Checker<N, D, NM, NMH>::read_samples_and_check(const char * filenamein, const char * filenameout)
+void Cube_Product_Checker<N, D, NM, NMH>::read_samples_and_check(const char* filenamein, const char* filenameout)
 {
     std::ifstream fin(filenamein);
     std::ofstream fout(filenameout, std::ios_base::app);

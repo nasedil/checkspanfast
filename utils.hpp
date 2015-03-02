@@ -137,8 +137,8 @@ public:
     static const int rnd_size = 0; /// Number of terms for linear combination.
     static const int rnd_count = 8; /// Number of additional bits.
     mm_bitset<rnd_size> r; /// Additional bits.
-    void calculate_properties(mm_vector_with_properties_options & o); /// Calculate additional bits.
-    static void make_options(mm_vector_with_properties_options & o); /// Make options randomly.
+    void calculate_properties(mm_vector_with_properties_options& o); /// Calculate additional bits.
+    static void make_options(mm_vector_with_properties_options& o); /// Make options randomly.
 };
 
 /**
@@ -149,7 +149,7 @@ public:
 template <size_t N>
 void
 mm_vector_with_properties<N>::
-calculate_properties(mm_vector_with_properties_options & o)
+calculate_properties(mm_vector_with_properties_options& o)
 {
     bit_count = v.count();
     for (int i = 0; i < rnd_size; ++i) {
@@ -168,7 +168,7 @@ calculate_properties(mm_vector_with_properties_options & o)
 template <size_t N>
 void
 mm_vector_with_properties<N>::
-make_options(mm_vector_with_properties_options & o)
+make_options(mm_vector_with_properties_options& o)
 {
     Random g(0, N-1);
     for (int i = 0; i < rnd_size; ++i) {
@@ -200,8 +200,8 @@ class Vectors_Presolve_Data
 public:
     mm_bitset<N> mor; /// Arithmetical OR of the all bitsets.
     Vectors_Presolve_Data();
-    void add_vector(const mm_bitset<N> & a); /// Add a bitset.
-    bool check(const mm_bitset<N> & a); /// Check if a vector could be in the span.
+    void add_vector(const mm_bitset<N>& a); /// Add a bitset.
+    bool check(const mm_bitset<N>& a); /// Check if a vector could be in the span.
 };
 
 /**
@@ -222,7 +222,7 @@ Vectors_Presolve_Data()
 template <size_t N>
 void
 Vectors_Presolve_Data<N>::
-add_vector(const mm_bitset<N> & a)
+add_vector(const mm_bitset<N>& a)
 {
     mor |= a;
 }
@@ -235,7 +235,7 @@ add_vector(const mm_bitset<N> & a)
  * @return false if the vector is definitely not in the span.
  */
 template <size_t N>
-bool Vectors_Presolve_Data<N>::check(const mm_bitset<N> & a)
+bool Vectors_Presolve_Data<N>::check(const mm_bitset<N>& a)
 {
     if ((~mor & a).any())
         return false;
