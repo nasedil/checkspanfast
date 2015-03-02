@@ -19,6 +19,49 @@
 
 //=============================================================================
 
+/// All the following functions solve SLAE using different methods.
+
+template <size_t N>
+bool gauss_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b);
+
+class Gauss_Presolve_Data;
+template <size_t N>
+void gauss_presolve(std::vector<mm_bitset<N>> a, Gauss_Presolve_Data & p);
+template <size_t N>
+bool gauss_solve(Gauss_Presolve_Data & p, mm_bitset<N> b);
+
+template <size_t N>
+bool binary_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b);
+
+template <size_t N>
+bool binary_solve_recursive(std::vector<mm_bitset<N>> a, mm_bitset<N> b);
+
+template <size_t N>
+bool gauss_solve_randomized(std::vector<mm_vector_with_properties<N>> a, mm_vector_with_properties<N> b);
+
+template <size_t N>
+class Gauss_WP_Presolve_Data;
+template <size_t N>
+bool gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>>& a, Gauss_WP_Presolve_Data<N>& p);
+template <size_t N>
+bool gauss_wp_solve(Gauss_WP_Presolve_Data<N>& p, mm_vector_with_properties<N>& b);
+
+//=============================================================================
+
+/// Comparison functions for bitvectors.
+
+template <size_t N>
+bool compare_lexical (const mm_bitset<N>& a, const mm_bitset<N>& b);
+
+template <size_t N>
+bool compare_count (const mm_bitset<N>& a, const mm_bitset<N>& b);
+
+template <size_t N>
+bool compare_combined (const mm_bitset<N>& a, const mm_bitset<N>& b);
+
+//=============================================================================
+//=============================================================================
+
 /**
  * Sovle SLAE by Gaussian elimination.
  *

@@ -25,6 +25,14 @@
 
 //=============================================================================
 
+/**
+ * Type alias for bitset.
+ */
+template <size_t N>
+using mm_bitset = std::bitset<N>;
+
+//=============================================================================
+
 int power(int a, int b); /// Rise a to power of b.
 
 //=============================================================================
@@ -52,6 +60,61 @@ public:
     int next(); /// Return random integer form the interval.
 };
 
+//=============================================================================
+
+/**
+ * Options for adding randomized bits to vectors.
+ *
+ * Contains sets of bit indices to add up
+ * for making additional bits in vectors.
+ */
+class mm_vector_with_properties_options
+{
+public:
+    std::vector<std::set<int>> rnd_sets; /// Sets of the bit indices.
+};
+
+/**
+ * Bitset vector with additional properties.
+ *
+ * Additional bits are added
+ * which are linear combinations of original bits.
+ *
+ * @param N: size of the bitsets.
+ */
+template <size_t N>
+class mm_vector_with_properties {
+public:
+    mm_bitset<N> v; /// Main bitset.
+    int bit_count;  /// Size of the bitset.
+    static const int rnd_size = 0; /// Number of terms for linear combination.
+    static const int rnd_count = 8; /// Number of additional bits.
+    mm_bitset<rnd_size> r; /// Additional bits.
+    void calculate_properties(mm_vector_with_properties_options& o); /// Calculate additional bits.
+    static void make_options(mm_vector_with_properties_options& o); /// Make options randomly.
+};
+
+//=============================================================================
+
+/**
+ * Bitset set properties.
+ *
+ * Stores some properties of a set of bitsets,
+ * to do fast check for linear independence.
+ *
+ * @param N: size of the bitsets.
+ */
+template <size_t N>
+class Vectors_Presolve_Data
+{
+public:
+    mm_bitset<N> mor; /// Arithmetical OR of the all bitsets.
+    Vectors_Presolve_Data();
+    void add_vector(const mm_bitset<N>& a); /// Add a bitset.
+    bool check(const mm_bitset<N>& a); /// Check if a vector could be in the span.
+};
+
+//=============================================================================
 //=============================================================================
 
 /**
@@ -102,46 +165,6 @@ Random::next()
 //=============================================================================
 
 /**
- * Type alias for bitset.
- */
-template <size_t N>
-using mm_bitset = std::bitset<N>;
-
-//=============================================================================
-
-/**
- * Options for adding randomized bits to vectors.
- *
- * Contains sets of bit indices to add up
- * for making additional bits in vectors.
- */
-class mm_vector_with_properties_options
-{
-public:
-    std::vector<std::set<int>> rnd_sets; /// Sets of the bit indices.
-};
-
-/**
- * Bitset vector with additional properties.
- *
- * Additional bits are added
- * which are linear combinations of original bits.
- *
- * @param N: size of the bitsets.
- */
-template <size_t N>
-class mm_vector_with_properties {
-public:
-    mm_bitset<N> v; /// Main bitset.
-    int bit_count;  /// Size of the bitset.
-    static const int rnd_size = 0; /// Number of terms for linear combination.
-    static const int rnd_count = 8; /// Number of additional bits.
-    mm_bitset<rnd_size> r; /// Additional bits.
-    void calculate_properties(mm_vector_with_properties_options& o); /// Calculate additional bits.
-    static void make_options(mm_vector_with_properties_options& o); /// Make options randomly.
-};
-
-/**
  * Calculate properties of the vector.
  *
  * @param o: options.
@@ -185,24 +208,6 @@ make_options(mm_vector_with_properties_options& o)
 }
 
 //=============================================================================
-
-/**
- * Bitset set properties.
- *
- * Stores some properties of a set of bitsets,
- * to do fast check for linear independence.
- *
- * @param N: size of the bitsets.
- */
-template <size_t N>
-class Vectors_Presolve_Data
-{
-public:
-    mm_bitset<N> mor; /// Arithmetical OR of the all bitsets.
-    Vectors_Presolve_Data();
-    void add_vector(const mm_bitset<N>& a); /// Add a bitset.
-    bool check(const mm_bitset<N>& a); /// Check if a vector could be in the span.
-};
 
 /**
  * Constructor.
