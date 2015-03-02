@@ -16,7 +16,7 @@
 #include <iostream>
 
 #include "slae.hpp"
-#include "mmchecker.hpp"
+#include "cpchecker.hpp"
 
 int main(int argc ,char ** argv)
 {
