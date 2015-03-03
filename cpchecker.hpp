@@ -56,20 +56,20 @@ public:
 
     //=============--- index operations
     /// return linear index in a bit vector by its indexes in matrices
-    int get_vector_index(int ai, int aj, int bi, int bj); /// for 2-dimensional case
-    int get_vector_index(int ai, int aj, int ak, int bi, int bj, int bk, int ci, int cj, int ck); /// for 3-d case
+    int get_vector_index(int ai, int aj, int bi, int bj) const; /// for 2-dimensional case
+    int get_vector_index(int ai, int aj, int ak, int bi, int bj, int bk, int ci, int cj, int ck) const; /// for 3-d case
     /// return linear index in a bit vector by combined indexes in matrices
-    int get_vector_index(int a, int b); /// for 2-d case
-    int get_vector_index(int a, int b, int c); /// for 3-d case
+    int get_vector_index(int a, int b) const; /// for 2-d case
+    int get_vector_index(int a, int b, int c) const; /// for 3-d case
     /// return indices from index
-    void decode_indices_from_index(int index, int& ai, int& aj, int& bi, int& bj); /// for 2-d case
-    void decode_indices_from_index(int index, int& ai, int& aj, int& ak, int& bi, int& bj, int& bk, int& ci, int& cj, int& ck); /// for 3-d case
+    void decode_indices_from_index(int index, int& ai, int& aj, int& bi, int& bj) const; /// for 2-d case
+    void decode_indices_from_index(int index, int& ai, int& aj, int& ak, int& bi, int& bj, int& bk, int& ci, int& cj, int& ck) const; /// for 3-d case
     /// return linear index of an element in a matrix
-    int get_element_index(int i, int j); /// for 2-d case
-    int get_element_index(int i, int j, int k); /// for 3-d case
+    int get_element_index(int i, int j) const; /// for 2-d case
+    int get_element_index(int i, int j, int k) const; /// for 3-d case
     /// return index of multiplication vector in the set
-    int get_m_index(int i, int j); /// for 2-d case
-    int get_m_index(int i, int j, int k); /// for 3-d case
+    int get_m_index(int i, int j) const; /// for 2-d case
+    int get_m_index(int i, int j, int k) const; /// for 3-d case
 
     //=============--- Initial calculations
     void init(); /// calculate all properties
@@ -86,10 +86,12 @@ public:
     bool check_for_good_vectors_randomized(); /// do random search
 
     //=============--- utilities
-    void output_vector(Multiplication_Vector v); /// output vector to screen
-    void output_vector_text(Multiplication_Vector v); /// output vector to screen in letters
-    void save_random_samples(int size, const char* filename); /// save random sets to a file (for testing later)
-    void read_samples_and_check(const char* filename, const char* filenameout); /// check sets from a file
+    void output_vector(Multiplication_Vector v) const; /// output vector to screen
+    void output_vector_text(Multiplication_Vector v) const; /// output vector to screen in letters
+    void save_random_samples(int size, const char* filename) const; /// save random sets to a file (for testing later)
+    void read_samples_and_check(const char* filename, const char* filenameout) const; /// check sets from a file
+
+    //=============--- deprecated and debugging
     bool check_vectors_for_goodness_a1(); /// just normal gauss everywhere
 };
 
@@ -177,7 +179,7 @@ template <int N, int D, size_t NM, size_t NMH>
 inline int
 Cube_Product_Checker<N, D, NM, NMH>::
 get_vector_index(int ai, int aj,
-                 int bi, int bj)
+                 int bi, int bj) const
 {
     int result = ai;
     result *= length;
@@ -210,7 +212,7 @@ inline int
 Cube_Product_Checker<N, D, NM, NMH>::
 get_vector_index(int ai, int aj, int ak,
                  int bi, int bj, int bk,
-                 int ci, int cj, int ck)
+                 int ci, int cj, int ck) const
 {
     int result = ai;
     result *= length;
@@ -247,7 +249,7 @@ get_vector_index(int ai, int aj, int ak,
 template <int N, int D, size_t NM, size_t NMH>
 inline int
 Cube_Product_Checker<N, D, NM, NMH>::
-get_vector_index(int a, int b)
+get_vector_index(int a, int b) const
 {
     int result = a;
     result *= element_count;
@@ -267,7 +269,7 @@ get_vector_index(int a, int b)
 template <int N, int D, size_t NM, size_t NMH>
 inline int
 Cube_Product_Checker<N, D, NM, NMH>::
-get_vector_index(int a, int b, int c)
+get_vector_index(int a, int b, int c) const
 {
     int result = a;
     result *= element_count;
@@ -295,7 +297,7 @@ inline void
 Cube_Product_Checker<N, D, NM, NMH>::
 decode_indices_from_index(int index,
                           int& ai, int& aj,
-                          int& bi, int& bj)
+                          int& bi, int& bj) const
 {
     bj = index % length;
     index /= length;
@@ -329,7 +331,7 @@ Cube_Product_Checker<N, D, NM, NMH>::
 decode_indices_from_index(int index,
                           int& ai, int& aj, int& ak,
                           int& bi, int& bj, int& bk,
-                          int& ci, int& cj, int& ck)
+                          int& ci, int& cj, int& ck) const
 {
     ck = index % length;
     index /= length;
@@ -366,7 +368,7 @@ decode_indices_from_index(int index,
 template <int N, int D, size_t NM, size_t NMH>
 inline int
 Cube_Product_Checker<N, D, NM, NMH>::
-get_element_index(int i, int j)
+get_element_index(int i, int j) const
 {
     return ((i*length) + j);
 }
@@ -383,7 +385,7 @@ get_element_index(int i, int j)
 template <int N, int D, size_t NM, size_t NMH>
 inline int
 Cube_Product_Checker<N, D, NM, NMH>::
-get_element_index(int i, int j, int k)
+get_element_index(int i, int j, int k) const
 {
     return (((i*length) + j)*length + k);
 }
@@ -404,7 +406,7 @@ get_element_index(int i, int j, int k)
 template <int N, int D, size_t NM, size_t NMH>
 inline int
 Cube_Product_Checker<N, D, NM, NMH>::
-get_m_index(int i, int j)
+get_m_index(int i, int j) const
 {
     return ((i*m_length) + j);
 }
@@ -424,7 +426,7 @@ get_m_index(int i, int j)
 template <int N, int D, size_t NM, size_t NMH>
 inline int
 Cube_Product_Checker<N, D, NM, NMH>::
-get_m_index(int i, int j, int k)
+get_m_index(int i, int j, int k) const
 {
     return (((i*m_length) + j)*m_length + k);
 }
@@ -744,7 +746,7 @@ check_for_good_vectors_randomized()
 template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
-output_vector(Multiplication_Vector v)
+output_vector(Multiplication_Vector v) const
 {
     std::cout << v;
 }
@@ -759,7 +761,7 @@ output_vector(Multiplication_Vector v)
 template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
-output_vector_text(Multiplication_Vector v)
+output_vector_text(Multiplication_Vector v) const
 {
     for (int i = 0; i < v.size(); ++i) {
         if (v[i]) {
@@ -781,7 +783,7 @@ output_vector_text(Multiplication_Vector v)
 template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
-save_random_samples(int size, const char* filename)
+save_random_samples(int size, const char* filename) const
 {
     std::ofstream fout(filename);
     Random rnd(0, m_count-1);
@@ -810,7 +812,7 @@ save_random_samples(int size, const char* filename)
  * @param filenameout: filename for output.
  */
 template <int N, int D, size_t NM, size_t NMH>
-void Cube_Product_Checker<N, D, NM, NMH>::read_samples_and_check(const char* filenamein, const char* filenameout)
+void Cube_Product_Checker<N, D, NM, NMH>::read_samples_and_check(const char* filenamein, const char* filenameout) const
 {
     std::ifstream fin(filenamein);
     std::ofstream fout(filenameout, std::ios_base::app);

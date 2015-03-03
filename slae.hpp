@@ -26,15 +26,15 @@ bool gauss_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b);
 
 class Gauss_Presolve_Data;
 template <size_t N>
-void gauss_presolve(std::vector<mm_bitset<N>> a, Gauss_Presolve_Data & p);
+void gauss_presolve(std::vector<mm_bitset<N>> a, Gauss_Presolve_Data& p);
 template <size_t N>
-bool gauss_solve(Gauss_Presolve_Data & p, mm_bitset<N> b);
+bool gauss_solve(const Gauss_Presolve_Data& p, mm_bitset<N> b);
 
 template <size_t N>
-bool binary_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b);
+bool binary_solve(const std::vector<mm_bitset<N>>& a, const mm_bitset<N>& b);
 
 template <size_t N>
-bool binary_solve_recursive(std::vector<mm_bitset<N>> a, mm_bitset<N> b);
+bool binary_solve_recursive(const std::vector<mm_bitset<N>>& a, const mm_bitset<N>& b);
 
 template <size_t N>
 bool gauss_solve_randomized(std::vector<mm_vector_with_properties<N>> a, mm_vector_with_properties<N> b);
@@ -44,7 +44,7 @@ class Gauss_WP_Presolve_Data;
 template <size_t N>
 bool gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>>& a, Gauss_WP_Presolve_Data<N>& p);
 template <size_t N>
-bool gauss_wp_solve(Gauss_WP_Presolve_Data<N>& p, mm_vector_with_properties<N>& b);
+bool gauss_wp_solve(const Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b);
 
 //=============================================================================
 
@@ -193,7 +193,7 @@ gauss_presolve(std::vector<mm_bitset<N>> a, Gauss_Presolve_Data & p)
  */
 template <size_t N>
 bool
-gauss_solve(Gauss_Presolve_Data & p, mm_bitset<N> b)
+gauss_solve(const Gauss_Presolve_Data& p, mm_bitset<N> b)
 {
     for (int i = 0; i < p.rows_o.size(); ++i) {
         if (p.rows_o[i]) {
@@ -223,7 +223,7 @@ gauss_solve(Gauss_Presolve_Data & p, mm_bitset<N> b)
  */
 template <size_t N>
 bool
-binary_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
+binary_solve(const std::vector<mm_bitset<N>>& a, const mm_bitset<N>& b)
 {
     uint_least64_t counter;
     uint_least64_t limit = power(2,a.size());
@@ -263,7 +263,7 @@ binary_solve(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
  */
 template <size_t N>
 bool
-binary_solve_explore(std::vector<mm_bitset<N>>* a, mm_bitset<N>* b, int depth, mm_bitset<N>* current)
+binary_solve_explore(const std::vector<mm_bitset<N>>* a, const mm_bitset<N>* b, int depth, const mm_bitset<N>* current)
 {
     if (depth == -1) {
         for (int k = 0; k < N; ++k) {
@@ -295,7 +295,7 @@ binary_solve_explore(std::vector<mm_bitset<N>>* a, mm_bitset<N>* b, int depth, m
  */
 template <size_t N>
 bool
-binary_solve_recursive(std::vector<mm_bitset<N>> a, mm_bitset<N> b)
+binary_solve_recursive(const std::vector<mm_bitset<N>>& a, const mm_bitset<N>& b)
 {
     uint_least64_t depth = a.size()-1;
     mm_bitset<N>* current = new mm_bitset<N>();
@@ -444,12 +444,12 @@ gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>>& a, Gauss_WP_P
  */
 template <size_t N>
 bool
-gauss_wp_solve(Gauss_WP_Presolve_Data<N>& p, mm_vector_with_properties<N>& b)
+gauss_wp_solve(const Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b)
 {
     mm_vector_with_properties<N> c;
     c.r.reset();
-    typename std::vector<mm_vector_with_properties<N>>::iterator j = p.am.begin();
-    for (std::vector<int>::iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
+    typename std::vector<mm_vector_with_properties<N>>::const_iterator j = p.am.begin();
+    for (std::vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
         if (b.v[*i]) {
             c.r ^= (*j).r;
         }
@@ -461,7 +461,7 @@ gauss_wp_solve(Gauss_WP_Presolve_Data<N>& p, mm_vector_with_properties<N>& b)
     }
     c.v.reset();
     j = p.am.begin();
-    for (std::vector<int>::iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
+    for (std::vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
         if (b.v[*i]) {
             c.v ^= (*j).v;
         }

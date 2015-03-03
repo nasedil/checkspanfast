@@ -111,7 +111,7 @@ public:
     mm_bitset<N> mor; /// Arithmetical OR of the all bitsets.
     Vectors_Presolve_Data();
     void add_vector(const mm_bitset<N>& a); /// Add a bitset.
-    bool check(const mm_bitset<N>& a); /// Check if a vector could be in the span.
+    bool check(const mm_bitset<N>& a) const; /// Check if a vector could be in the span.
 };
 
 //=============================================================================
@@ -240,7 +240,7 @@ add_vector(const mm_bitset<N>& a)
  * @return false if the vector is definitely not in the span.
  */
 template <size_t N>
-bool Vectors_Presolve_Data<N>::check(const mm_bitset<N>& a)
+bool Vectors_Presolve_Data<N>::check(const mm_bitset<N>& a) const
 {
     if ((~mor & a).any())
         return false;
