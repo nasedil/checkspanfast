@@ -884,17 +884,32 @@ save_results(const char* filename) {
     fout << "Results: " << solutions.size() << " different solutions were found." << std::endl;
     fout << raw_solution_count << " vector sets were successful." << std::endl;
     std::map<int, int> vector_distribution = std::map<int, int>();
+    std::vector<std::map<int, int>> bit_distributions;
     for (std::set<std::set<int>>::iterator i = solutions.begin(); i != solutions.end(); ++i) {
         fout << "[ ";
+        std::map<int, int> bd;
         for (std::set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j) {
             fout << (*j) << " ";
             ++vector_distribution[*j];
+            for (size_t k = 0; k < m_vectors[*j].v.size(); ++k) {
+                if (m_vectors[*j].v.test(k)) {
+                    ++bd[k];
+                }
+            }
         }
+        bit_distributions.push_back(bd);
         fout << "] : " << solution_distribution[(*i)] << std::endl;
     }
     fout << std::endl << "Used vectors are:" << std::endl;
-    for(const auto &e: vector_distribution) {
+    for (const auto& e: vector_distribution) {
         fout << e.first << "\t" << m_vectors[e.first].v << " : " << e.second << std::endl;
+    }
+    fout << std::endl << "Bit distributions per solution are:" << std::endl;
+    for (auto& e: bit_distributions) {
+        for (int i = 0; i < NM; ++i) {
+            fout << e[i];
+        }
+        fout << std::endl;
     }
     fout.close();
 }
