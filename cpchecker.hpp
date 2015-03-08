@@ -16,10 +16,21 @@
 #include <fstream>
 #include <set>
 #include <vector>
+#include <map>
+#include <string>
+#include <numeric>
+
+#include <boost/dynamic_bitset.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include "slae.hpp"
 #include "utils.hpp"
 
+//=============================================================================
+
+class Solution_Properties;
+
+//=============================================================================
 //=============================================================================
 
 /**
@@ -47,7 +58,9 @@ public:
     int f_count; /// number of vectors to choose for a basis = N^(D+1)-1
     std::set<int> good_vectors_indexes; /// set of indexes for vectors that are in the current span
     std::set<int> n_vectors_indexes; /// set of indexes of current chosen vectors
-    std::set<std::set<int>> solutions; /// set of found solutions
+    std::set<std::set<int>> solutions; /// set of found unique solutions
+    std::map<std::set<int>, int> solution_distribution; /// set of all found solutions
+    int raw_solution_count; /// number of found solutions, including duplicates
     Timewatch tw; /// timer that is used for getting calculation time
 
     //=============--- constructors and destructors
@@ -61,7 +74,7 @@ public:
     /// return linear index in a bit vector by combined indexes in matrices
     int get_vector_index(int a, int b) const; /// for 2-d case
     int get_vector_index(int a, int b, int c) const; /// for 3-d case
-    /// return indices from index
+    /// return indices from bit index
     void decode_indices_from_index(int index, int& ai, int& aj, int& bi, int& bj) const; /// for 2-d case
     void decode_indices_from_index(int index, int& ai, int& aj, int& ak, int& bi, int& bj, int& bk, int& ci, int& cj, int& ck) const; /// for 3-d case
     /// return linear index of an element in a matrix
@@ -91,9 +104,23 @@ public:
     void save_random_samples(int size, const char* filename) const; /// save random sets to a file (for testing later)
     void read_samples_and_check(const char* filename, const char* filenameout) const; /// check sets from a file
 
-    //=============--- deprecated and debugging
-    bool check_vectors_for_goodness_a1(); /// just normal gauss everywhere
+    //=============--- Statistics and results
+    void save_results(const char* filename); /// save results to a file
+    bool check_solution(std::set<int> s, Solution_Properties& sp); /// check if a solution is valid
+    void save_solution_properties(const Solution_Properties& sp, const char* filename); /// output solution properties to a file
+    std::vector<int> sum_operations_cube(int index); /// number of summation operations inside cubes
 };
+
+//=============================================================================
+
+class Solution_Properties
+{
+public:
+    std::set<int> multiplication_vectors; /// multiplication vector indices
+    std::vector<boost::dynamic_bitset<>> coefficients; /// result vector coefficients
+    int operation_count; /// number of addition operations used for calculating result matrix overall
+};
+
 
 //=============================================================================
 //=============================================================================
@@ -638,8 +665,6 @@ check_vectors_for_goodness()
 /**
  * Check all solution space for solutions (2-d case).
  *
- * Saves solutions
- *
  * @return true if at least one solution was found.
  */
 template <>
@@ -647,7 +672,11 @@ bool
 Cube_Product_Checker<2, 2, 16, 4>::
 check_for_good_vectors()
 {
+#ifdef OUTPUT_STATISTICS
     solutions.clear();
+    solution_distribution.clear();
+#endif // OUTPUT_STATISTICS
+    raw_solution_count = 0;
     for (int c1 = 0; c1 < m_count-2; ++c1) {
         for (int c2 = c1+1; c2 < m_count-1; ++c2) {
             for (int c3 = c2+1; c3 < m_count; ++c3) {
@@ -656,23 +685,15 @@ check_for_good_vectors()
                 add_vector_to_set(c2);
                 add_vector_to_set(c3);
                 if (check_vectors_for_goodness()) {
+#ifdef OUTPUT_STATISTICS
                     solutions.insert(good_vectors_indexes);
+                    ++solution_distribution[good_vectors_indexes];
+                    ++raw_solution_count;
+#endif // OUTPUT_STATISTICS
                 }
             }
         }
     }
-#ifdef OUTPUT_STATISTICS
-    std::ofstream fout("results2.txt");
-    fout << "Results: " << results.size() << " found solutions.\n";
-    for (std::set<std::set<int>>::iterator i = results.begin(); i != results.end(); ++i) {
-        fout << "[ ";
-        for (std::set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j) {
-            fout << (*j) << " ";
-        }
-        fout << "]\n";
-    }
-    fout.close();
-#endif // OUTPUT_STATISTICS
     return (solutions.size() > 0);
 }
 
@@ -754,16 +775,16 @@ output_vector(Multiplication_Vector v) const
 //=============================================================================
 
 /**
- * Print value of a vector in letters.
+ * Print value of a vector in letters (2-d case).
  *
  * @param v: the vector.
  */
-template <int N, int D, size_t NM, size_t NMH>
+template <>
 void
-Cube_Product_Checker<N, D, NM, NMH>::
+Cube_Product_Checker<2, 2, 16, 4>::
 output_vector_text(Multiplication_Vector v) const
 {
-    for (int i = 0; i < v.size(); ++i) {
+    for (size_t i = 0; i < v.size(); ++i) {
         if (v[i]) {
             int ai, aj, bi, bj;
             decode_indices_from_index(i, ai, aj, bi, bj);
@@ -812,7 +833,8 @@ save_random_samples(int size, const char* filename) const
  * @param filenameout: filename for output.
  */
 template <int N, int D, size_t NM, size_t NMH>
-void Cube_Product_Checker<N, D, NM, NMH>::read_samples_and_check(const char* filenamein, const char* filenameout) const
+void Cube_Product_Checker<N, D, NM, NMH>::
+read_samples_and_check(const char* filenamein, const char* filenameout) const
 {
     std::ifstream fin(filenamein);
     std::ofstream fout(filenameout, std::ios_base::app);
@@ -845,6 +867,187 @@ void Cube_Product_Checker<N, D, NM, NMH>::read_samples_and_check(const char* fil
     std::cout << "Found " << gv << " solutions\n";
     fout << "Total time: " << time << " s (" << (time/size) << " s avg) (found " << gv << " good vectors)\n";
     fout.close();
+}
+
+//=============================================================================
+
+/**
+ * Calculate statistics and save to a file.
+ *
+ * @param filename: filename to save statistics.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+save_results(const char* filename) {
+    std::ofstream fout(filename);
+    fout << "Results: " << solutions.size() << " different solutions were found." << std::endl;
+    fout << raw_solution_count << " vector sets were successful." << std::endl;
+    std::map<int, int> vector_distribution = std::map<int, int>();
+    for (std::set<std::set<int>>::iterator i = solutions.begin(); i != solutions.end(); ++i) {
+        fout << "[ ";
+        for (std::set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j) {
+            fout << (*j) << " ";
+            ++vector_distribution[*j];
+        }
+        fout << "] : " << solution_distribution[(*i)] << std::endl;
+    }
+    fout << std::endl << "Used vectors are:" << std::endl;
+    for(const auto &e: vector_distribution) {
+        fout << e.first << "\t" << m_vectors[e.first].v << " : " << e.second << std::endl;
+    }
+    fout.close();
+}
+
+//=============================================================================
+
+/**
+ * Check if a given set of vectors is a valid solution.
+ *
+ * @param s:  set of result vectors;
+ *
+ * @param sp: solution properties;
+ *
+ * @return if it is a solution.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+bool
+Cube_Product_Checker<N, D, NM, NMH>::
+check_solution(std::set<int> s, Solution_Properties& sp) {
+    sp.coefficients.clear();
+    sp.multiplication_vectors.clear();
+    sp.multiplication_vectors = s;
+    sp.operation_count = 0;
+    std::vector<mm_bitset<NM>> vectors;
+    for (auto i: s) {
+        vectors.push_back(m_vectors[i].v);
+        std::vector<int> ops = sum_operations_cube(i);
+        sp.operation_count += std::accumulate(ops.begin(), ops.end(), -ops.size());
+    }
+    for (int i = 0; i < element_count; ++i) {
+        if (!gauss_solve(vectors, r_vectors[i].v)) {
+            return false;
+        }
+        boost::dynamic_bitset<> x = binary_solve_result(vectors, r_vectors[i].v);
+        sp.coefficients.push_back(x);
+        sp.operation_count += x.count() - 1;
+    }
+    return true;
+}
+
+//=============================================================================
+
+/**
+ * Return number of summation operations inside cubes for a given index of multiplication vector.
+ *
+ * @param index: multiplication vector index;
+ *
+ * @return list of operation count for each cube.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+std::vector<int>
+Cube_Product_Checker<N, D, NM, NMH>::
+sum_operations_cube(int index)
+{
+    std::vector<int> result;
+    if (dimension == 2) {
+        int i, j;
+        j = index % m_length + 1;
+        i = index / m_length + 1;
+        result.push_back(popcount(i%length) + popcount(i/length));
+        result.push_back(popcount(j%length) + popcount(j/length));
+    } else if (dimension == 3) {
+        int i, j, k;
+        k = index % m_length + 1;
+        index /= m_length;
+        j = index % m_length + 1;
+        i = index / m_length + 1;
+        result.push_back(popcount(i%length) + popcount(i/length));
+        result.push_back(popcount(j%length) + popcount(j/length));
+        result.push_back(popcount(k%length) + popcount(k/length));
+    }
+    return result;
+}
+
+//=============================================================================
+
+/**
+ * Output solution properties to a file in readable text form.
+ *
+ * @param sp: solution properties object;
+ * @param filename: filename.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+save_solution_properties(const Solution_Properties& sp, const char* filename)
+{
+    std::ofstream out(filename);
+    //----- header
+    out << "Strassen solution for ";
+    for (int i = 0; i < dimension-1; ++i) {
+        out << length << "×";
+    }
+    out << length << " cube product with " << f_count << " multiplications." << std::endl << std::endl;
+    //----- multiplication vectors numbers
+    out << "Multiplication numbers: [ ";
+    for (auto i: sp.multiplication_vectors) {
+        out << i << " ";
+    }
+    out << "]" << std::endl;
+    //----- multiplications
+    int c = 1;
+    int m_summations = 0;
+    for (auto i = sp.multiplication_vectors.begin(); i != sp.multiplication_vectors.end(); ++i, ++c) {
+        out << "M" << c << " = ";
+        std::vector<int> ops = sum_operations_cube(*i);
+        m_summations += std::accumulate(ops.begin(), ops.end(), -ops.size());
+        std::vector<std::string> sm, smc;
+        std::set<std::string> sa, sb, sc;
+        Multiplication_Vector& mv = m_vectors[*i].v;
+        if (dimension == 2) {
+            for (size_t j = 0; j < mv.size(); ++j) {
+                if (mv[j]) {
+                    int ai, aj, bi, bj;
+                    decode_indices_from_index(j, ai, aj, bi, bj);
+                    sm.push_back("A" + std::to_string(ai+1) + std::to_string(aj+1) +
+                                 "B" + std::to_string(bi+1) + std::to_string(bj+1));
+                    sa.insert("A" + std::to_string(ai+1) + std::to_string(aj+1));
+                    sb.insert("B" + std::to_string(bi+1) + std::to_string(bj+1));
+                }
+            }
+            out << "(" << boost::algorithm::join(sa, " + ") + ")×";
+            out << "(" << boost::algorithm::join(sb, " + ") + ")";
+        } else if (dimension == 3) {
+            // TODO
+        }
+        out << " = ";
+        out << boost::algorithm::join(sm, " + ") << std::endl;
+    }
+    //----- result elements
+    int r_summations = 0;
+    for (int i = 0; i < element_count; ++i) {
+        std::vector<std::string> sr;
+        boost::dynamic_bitset<> x = sp.coefficients[i];
+        r_summations += x.count() - 1;
+        if (dimension == 2) {
+            out << "C" << i/length+1 << i%length+1 << " = ";
+        } else if (dimension == 3) {
+            // TODO
+        }
+        for (boost::dynamic_bitset<>::size_type j = 0; j < x.size(); ++j) {
+            if (x.test(j)) {
+                sr.push_back("M" + std::to_string(j+1));
+            }
+        }
+        out << boost::algorithm::join(sr, " + ") << std::endl;
+    }
+    //----- summation count
+    out << "Summation count for multiplications = " << m_summations << std::endl;
+    out << "Summation count for result elements = " << r_summations << std::endl;
+    out << "Total number of summations used = " << sp.operation_count << std::endl;
+    //----- end
+    out.close();
 }
 
 //=============================================================================

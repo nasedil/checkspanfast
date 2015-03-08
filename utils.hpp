@@ -34,6 +34,7 @@ using mm_bitset = std::bitset<N>;
 //=============================================================================
 
 int power(int a, int b); /// Rise a to power of b.
+int popcount(int x); /// Return number of set bits in a number.
 
 //=============================================================================
 
@@ -265,6 +266,21 @@ power(int a, int b)
         result *= a;
     }
     return result;
+}
+
+//=============================================================================
+
+/**
+ * Return number of set bits in a number (max 16 bit).
+ *
+ * @param x: the number;
+ *
+ * @return the number of set bits.
+ */
+int popcount(int x)
+{
+    std::bitset<16> b(x);
+    return b.count();
 }
 
 //=============================================================================

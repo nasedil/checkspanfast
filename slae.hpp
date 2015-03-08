@@ -249,6 +249,63 @@ binary_solve(const std::vector<mm_bitset<N>>& a, const mm_bitset<N>& b)
     return false;
 }
 
+/**
+ * Solve SLAE by trying all solutions.
+ *
+ * @param a: the coefficient matrix;
+ * @param b: the resulting vector;
+ *
+ * @return if there is a solution.
+ */
+template <size_t N>
+bool
+binary_solve(const std::vector<mm_vector_with_properties<N>>& a, const mm_vector_with_properties<N>& b)
+{
+    std::vector<mm_bitset<N>> sa;
+    for (auto& vp: a) {
+        sa.push_back(vp.v);
+    }
+    return binary_solve(sa, b.v);
+}
+
+/**
+ * Solve SLAE by trying all solutions and return the result.
+ *
+ * The SLAE should have a solution.
+ *
+ * @param a: the coefficient matrix;
+ * @param b: the resulting vector;
+ *
+ * @return solution (if SLAE has no solution, return value could be anything).
+ */
+template <size_t N>
+boost::dynamic_bitset<>
+binary_solve_result(const std::vector<mm_bitset<N>>& a, const mm_bitset<N>& b)
+{
+    uint_least64_t counter;
+    uint_least64_t limit = power(2,a.size());
+    for (counter = 1; counter < limit; ++counter) {
+        boost::dynamic_bitset<> x(a.size(),counter);
+        mm_bitset<N> r(0);
+        bool is_good = true;
+        // we multiply a by x
+        for (int i = 0; i < b.size(); ++i) {
+            for (int j = 0; j < a.size(); ++j) {
+                if (x[j]) {
+                    r[i] = (r[i] != a[j][i]);
+                }
+            }
+            if (r[i] != b[i]) {
+                is_good = false;
+                break;
+            }
+        }
+        if (is_good)
+            return x;
+    }
+    return boost::dynamic_bitset<>();
+}
+
 //=============================================================================
 
 /**
