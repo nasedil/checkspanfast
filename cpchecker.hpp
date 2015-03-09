@@ -972,17 +972,17 @@ sum_operations_cube(int index)
         int i, j;
         j = index % m_length + 1;
         i = index / m_length + 1;
-        result.push_back(popcount(i%length) + popcount(i/length));
-        result.push_back(popcount(j%length) + popcount(j/length));
+        result.push_back(popcount(i));
+        result.push_back(popcount(j));
     } else if (dimension == 3) {
         int i, j, k;
         k = index % m_length + 1;
         index /= m_length;
         j = index % m_length + 1;
         i = index / m_length + 1;
-        result.push_back(popcount(i%length) + popcount(i/length));
-        result.push_back(popcount(j%length) + popcount(j/length));
-        result.push_back(popcount(k%length) + popcount(k/length));
+        result.push_back(popcount(i));
+        result.push_back(popcount(j));
+        result.push_back(popcount(k));
     }
     return result;
 }
