@@ -147,6 +147,7 @@ void parallel_2x2x2()
     master_checker->init();
     #pragma omp parallel
     {
+        int thread_count = omp_get_num_threads();
         Cube_Product_Checker<2, 3, 512, 8>* checker;
         if (omp_get_thread_num() == 0) {
             checker = master_checker;
@@ -154,6 +155,7 @@ void parallel_2x2x2()
             checker = new Cube_Product_Checker<2, 3, 512, 8>;
             checker->init(*master_checker);
         }
+        checker->tw.thread_count = thread_count;
         if (checker->check_for_good_vectors_randomized()) {
             std::cout << "Found after " << checker->iteration_count << " iterations.";
         }
