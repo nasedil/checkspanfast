@@ -53,6 +53,7 @@ public:
     mm_vector_with_properties_options vector_options; /// options for vector properties
     mm_vector_with_properties<NM>* r_vectors; /// result vectors
     mm_vector_with_properties<NM>* m_vectors; /// multiplication vectors
+    bool owns_arrays; /// If arrays are created by the object.
     int m_count; /// number of non-zero multiplication vectors = (2^(N^D)-1)^D
     int m_length; /// number non-zero element sums = 2^(N^D)-1
     int f_count; /// number of vectors to choose for a basis = N^(D+1)-1
@@ -87,6 +88,7 @@ public:
 
     //=============--- Initial calculations
     void init(); /// calculate all properties
+    void init(const Cube_Product_Checker& cpc); /// Link to all properties in other object.
     void calculate_r_vectors(); /// write result vectors to array
     void calculate_m_vectors(); /// write multiplication vectors to array
 
@@ -114,14 +116,12 @@ public:
 
 //=============================================================================
 
-class Solution_Properties
-{
+class Solution_Properties {
 public:
     std::set<int> multiplication_vectors; /// multiplication vector indices
     std::vector<boost::dynamic_bitset<>> coefficients; /// result vector coefficients
     int operation_count; /// number of addition operations used for calculating result matrix overall
 };
-
 
 //=============================================================================
 //=============================================================================
@@ -133,17 +133,15 @@ public:
  */
 template <int N, int D, size_t NM, size_t NMH>
 Cube_Product_Checker<N, D, NM, NMH>::
-Cube_Product_Checker()
+Cube_Product_Checker() :
+    owns_arrays(false)
 {
     length = N;
     dimension = D;
     element_count = power(length, dimension);
     f_count = power(length,dimension+1)-1;
-    r_vectors = new mm_vector_with_properties<NM>[element_count];
     m_length = power(2,element_count)-1;
     m_count = power(m_length,dimension);
-    m_vectors = new mm_vector_with_properties<NM>[m_count];
-    mm_vector_with_properties<NM>::make_options(vector_options);
 #ifdef VERBOSE_OUTPUT
     std::cout << "Cube Product Checker has been created." << std::endl;
 #endif // VERBOSE_OUTPUT
@@ -158,8 +156,10 @@ template <int N, int D, size_t NM, size_t NMH>
 Cube_Product_Checker<N, D, NM, NMH>::
 ~Cube_Product_Checker()
 {
-    delete [] r_vectors;
-    delete [] m_vectors;
+    if (owns_arrays) {
+        delete [] r_vectors;
+        delete [] m_vectors;
+    }
 }
 
 //=============================================================================
@@ -172,6 +172,10 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 init()
 {
+    r_vectors = new mm_vector_with_properties<NM>[element_count];
+    m_vectors = new mm_vector_with_properties<NM>[m_count];
+    mm_vector_with_properties<NM>::make_options(vector_options);
+    owns_arrays = true;
 #ifdef VERBOSE_OUTPUT
     tw.watch();
 #endif // VERBOSE_OUTPUT
@@ -189,6 +193,23 @@ init()
 #ifdef VERBOSE_OUTPUT
     std::cout << "[" << tw.watch() << " s] Multiplication vectors calculated." << std::endl;
 #endif // VERBOSE_OUTPUT
+}
+
+/**
+ * Initialize the object with all necessary properties from other object.
+ *
+ * Link to all big data fields in the other object.
+ *
+ * @param cpc: the object to get main arrays from.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+init(const Cube_Product_Checker& cpc)
+{
+    r_vectors = cpc.r_vectors;
+    m_vectors = cpc.m_vectors;
+    vector_options = cpc.vector_options;
 }
 
 //=============================================================================

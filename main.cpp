@@ -9,8 +9,8 @@
  */
 
 #define VERBOSE_OUTPUT /// output verbose information
-//#define VERY_DETAILED_OUTPUT /// output even more information
-//#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
+#define VERY_DETAILED_OUTPUT /// output even more information
+#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 #define OUTPUT_STATISTICS
 
 #include <iostream>
@@ -143,10 +143,17 @@ void parallel_3x3()
 
 void parallel_2x2x2()
 {
+    Cube_Product_Checker<2, 3, 512, 8>* master_checker = new Cube_Product_Checker<2, 3, 512, 8>;
+    master_checker->init();
     #pragma omp parallel
     {
-        Cube_Product_Checker<2, 3, 512, 8>* checker = new Cube_Product_Checker<2, 3, 512, 8>;
-        checker->init();
+        Cube_Product_Checker<2, 3, 512, 8>* checker;
+        if (omp_get_thread_num() == 0) {
+            checker = master_checker;
+        } else {
+            checker = new Cube_Product_Checker<2, 3, 512, 8>;
+            checker->init(*master_checker);
+        }
         if (checker->check_for_good_vectors_randomized()) {
             std::cout << "Found after " << checker->iteration_count << " iterations.";
         }
