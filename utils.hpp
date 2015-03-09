@@ -22,6 +22,7 @@
 #include <set>
 #include <vector>
 #include <bitset>
+#include <chrono>
 
 //=============================================================================
 
@@ -148,7 +149,8 @@ Timewatch::watch()
  * @param upper bound of the interval (inclusive).
  */
 Random::Random(int i, int s) :
-    distribution(i,s)
+    distribution(i,s),
+    generator(std::chrono::system_clock::now().time_since_epoch().count())
 {
 }
 

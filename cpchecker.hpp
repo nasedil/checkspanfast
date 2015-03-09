@@ -60,6 +60,7 @@ public:
     std::set<int> n_vectors_indexes; /// set of indexes of current chosen vectors
     std::set<std::set<int>> solutions; /// set of found unique solutions
     std::map<std::set<int>, int> solution_distribution; /// set of all found solutions
+    int iteration_count; /// number of finished
     int raw_solution_count; /// number of found solutions, including duplicates
     Timewatch tw; /// timer that is used for getting calculation time
 
@@ -741,6 +742,7 @@ bool
 Cube_Product_Checker<N, D, NM, NMH>::
 check_for_good_vectors_randomized()
 {
+    iteration_count = 0;
     Random rnd(0, m_count-1);
     while (true) {
         clear_sets();
@@ -751,6 +753,7 @@ check_for_good_vectors_randomized()
             }
             add_vector_to_set(cc);
         }
+        ++iteration_count;
         if (check_vectors_for_goodness())
             return true;
     }
