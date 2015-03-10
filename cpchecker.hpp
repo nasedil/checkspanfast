@@ -56,7 +56,7 @@ public:
     bool owns_arrays; /// If arrays are created by the object.
     int m_count; /// number of non-zero multiplication vectors = (2^(N^D)-1)^D
     int m_length; /// number non-zero element sums = 2^(N^D)-1
-    int f_count; /// number of vectors to choose for a basis = N^(D+1)-1
+    int f_count; /// number of vectors to choose for a basis (for minimal improvement it is N^(D+1)-1)
     std::set<int> good_vectors_indexes; /// set of indexes for vectors that are in the current span
     std::set<int> n_vectors_indexes; /// set of indexes of current chosen vectors
     std::set<std::set<int>> solutions; /// set of found unique solutions
@@ -87,7 +87,7 @@ public:
     int get_m_index(int i, int j, int k) const; /// for 3-d case
 
     //=============--- Initial calculations
-    void init(); /// calculate all properties
+    void init(int mult_count); /// calculate all properties
     void init(const Cube_Product_Checker& cpc); /// Link to all properties in other object.
     void calculate_r_vectors(); /// write result vectors to array
     void calculate_m_vectors(); /// write multiplication vectors to array
@@ -166,12 +166,15 @@ Cube_Product_Checker<N, D, NM, NMH>::
 
 /**
  * Initialize the object with all necessary properties.
+ *
+ * @param mult_count:  number of multiplications in resulting algorithm.
  */
 template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
-init()
+init(int mult_count)
 {
+    f_count = mult_count;
     r_vectors = new mm_vector_with_properties<NM>[element_count];
     m_vectors = new mm_vector_with_properties<NM>[m_count];
     mm_vector_with_properties<NM>::make_options(vector_options);
@@ -483,7 +486,7 @@ get_m_index(int i, int j, int k) const
 //=============================================================================
 
 /**
- * Calculate product result vectors (2-d case).
+ * Calculate product result vectors (2x2 case).
  */
 template <>
 void
@@ -502,7 +505,26 @@ calculate_r_vectors()
 }
 
 /**
- * Calculate product result vectors (3-d case).
+ * Calculate product result vectors (3x3 case).
+ */
+template <>
+void
+Cube_Product_Checker<3, 2, 81, 9>::
+calculate_r_vectors()
+{
+    for (int i = 0; i < length; ++i) {
+        for (int j = 0; j < length; ++j) {
+            int index = get_element_index(i, j);
+            r_vectors[index].v.reset();
+            for (int l = 0; l < length; ++l) {
+                r_vectors[index].v[get_vector_index(i, l, l, j)] = 1;
+            }
+        }
+    }
+}
+
+/**
+ * Calculate product result vectors (2x2x2 case).
  */
 template <>
 void
@@ -525,11 +547,36 @@ calculate_r_vectors()
 //=============================================================================
 
 /**
- * Calculate non-zero multiplication vectors (2-d case).
+ * Calculate non-zero multiplication vectors (2x2 case).
  */
 template <>
 void
 Cube_Product_Checker<2, 2, 16, 4>::
+calculate_m_vectors()
+{
+    for (int i = 1; i < power(2,element_count); ++i) {
+        for (int j = 1; j < power(2,element_count); ++j) {
+            Multiplication_Part_Vector av(i);
+            Multiplication_Part_Vector bv(j);
+            int index = get_m_index(i-1, j-1);
+            m_vectors[index].v.reset();
+            for (int k = 0; k < element_count; ++k) {
+                for (int l = 0; l < element_count; ++l) {
+                    if (av[k] && bv[l]) {
+                        m_vectors[index].v.set(get_vector_index(k, l));
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Calculate non-zero multiplication vectors (3x3 case).
+ */
+template <>
+void
+Cube_Product_Checker<3, 2, 81, 9>::
 calculate_m_vectors()
 {
     for (int i = 1; i < power(2,element_count); ++i) {
@@ -685,7 +732,7 @@ check_vectors_for_goodness()
 //=============================================================================
 
 /**
- * Check all solution space for solutions (2-d case).
+ * Check all solution space for solutions (2x2 case).
  *
  * @return true if at least one solution was found.
  */
@@ -720,7 +767,7 @@ check_for_good_vectors()
 }
 
 /**
- * Check all solution space for solutions (3-d case).
+ * Check all solution space for solutions (2x2x2 case).
  *
  * @return true if a solution was found.
  */

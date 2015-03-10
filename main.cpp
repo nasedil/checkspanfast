@@ -9,7 +9,7 @@
  */
 
 #define VERBOSE_OUTPUT /// output verbose information
-#define VERY_DETAILED_OUTPUT /// output even more information
+//#define VERY_DETAILED_OUTPUT /// output even more information
 #define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 #define OUTPUT_STATISTICS
 
@@ -23,8 +23,9 @@
 
 //=============================================================================
 
-void test();
-void parallel(int p, int n, int d);
+void temp(); /// tests during development process
+void test(int n, int d);  /// test different algorithms and write results
+void parallel(int p, int n, int d); /// find solutions in parallel
 void parallel_2x2();
 void parallel_3x3();
 void parallel_2x2x2();
@@ -37,7 +38,9 @@ int main(int argc ,char** argv)
         int choice = atoi(argv[1]);
         switch (choice) {
             case 1: {
-                test();
+                int n = atoi(argv[2]);
+                int d = atoi(argv[3]);
+                test(n, d);
                 break;
             }
             case 2: {
@@ -48,7 +51,7 @@ int main(int argc ,char** argv)
                 break;
             }
             default: {
-                test();
+                temp();
                 break;
             }
         }
@@ -68,10 +71,10 @@ int main(int argc ,char** argv)
 //=============================================================================
 //=============================================================================
 
-void test()
+void temp()
 {
     Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
-    checker->init();
+    checker->init(7);
     checker->check_for_good_vectors();
     checker->save_results("./solutions-2x2.txt");
     bool all_right = true;
@@ -126,7 +129,7 @@ void parallel_2x2()
     #pragma omp parallel
     {
         Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
-        checker->init();
+        checker->init(7);
         if (checker->check_for_good_vectors_randomized()) {
             std::cout << "Found after " << checker->iteration_count << " iterations.";
         }
@@ -138,13 +141,30 @@ void parallel_2x2()
 
 void parallel_3x3()
 {
-    return;
+    Cube_Product_Checker<3, 2, 81, 9>* master_checker = new Cube_Product_Checker<3, 2, 81, 9>;
+    master_checker->init(23);
+    #pragma omp parallel
+    {
+        int thread_count = omp_get_num_threads();
+        Cube_Product_Checker<3, 2, 81, 9>* checker;
+        if (omp_get_thread_num() == 0) {
+            checker = master_checker;
+        } else {
+            checker = new Cube_Product_Checker<3, 2, 81, 9>;
+            checker->init(*master_checker);
+        }
+        checker->tw.thread_count = thread_count;
+        if (checker->check_for_good_vectors_randomized()) {
+            std::cout << "Found after " << checker->iteration_count << " iterations.";
+        }
+        delete checker;
+    }
 }
 
 void parallel_2x2x2()
 {
     Cube_Product_Checker<2, 3, 512, 8>* master_checker = new Cube_Product_Checker<2, 3, 512, 8>;
-    master_checker->init();
+    master_checker->init(15);
     #pragma omp parallel
     {
         int thread_count = omp_get_num_threads();
@@ -161,4 +181,36 @@ void parallel_2x2x2()
         }
         delete checker;
     }
+}
+
+void test(int n, int d)
+{
+    if ((n != 2) || (d != 2)) {
+        std::cout << "The suite not ready yet.";
+        return;
+    }
+    Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
+    checker->init(7);
+    checker->check_for_good_vectors();
+    checker->save_results("./solutions-2x2.txt");
+    bool all_right = true;
+    Solution_Properties sp;
+    Solution_Properties best_solution;
+    best_solution.operation_count = 1000000;
+    for (auto s: checker->solutions) {
+        bool is_real = checker->check_solution(s, sp);
+        if (best_solution.operation_count > sp.operation_count) {
+            best_solution = sp;
+        }
+        if (!is_real) {
+            all_right = false;
+        }
+    }
+    if (all_right) {
+        std::cout << "All solutions are checked and right." << std::endl;
+    } else {
+        std::cout << "All solutions are checked and there are problems!" << std::endl;
+    }
+    checker->save_solution_properties(best_solution, "./solution-2x2-best.txt");
+    delete checker;
 }
