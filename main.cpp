@@ -193,17 +193,22 @@ void test(int n, int d)
     checker->init(7);
     Timewatch tw;
     int times = 100;
-    int iterations;
+    int checked_sets_count;
     std::cout << "Start testing different search algorithms..." << std::endl;
+    //----- test full space
+    tw.watch();
+    checker->check_for_good_vectors();
+    std::cout << "Full search: " << tw.watch() << " s / "
+              << checker->checked_sets_count << " checked sets" << std::endl;
     //----- test random search
     tw.watch();
-    iterations = 0;
+    checked_sets_count = 0;
     for (int i = 0; i < times; ++i) {
         checker->check_for_good_vectors_randomized();
-        iterations += checker->iteration_count;
+        checked_sets_count += checker->checked_sets_count;
     }
     std::cout << "Random search: " << tw.watch()/times << " s / "
-              << 1.0*iterations/times << " iterations" << std::endl;
+              << 1.0*checked_sets_count/times << " checked sets" << std::endl;
     //----- end
     std::cout << "Testing finished." << std::endl;
     delete checker;

@@ -61,9 +61,11 @@ public:
     std::set<int> n_vectors_indexes; /// set of indexes of current chosen vectors
     std::set<std::set<int>> solutions; /// set of found unique solutions
     std::map<std::set<int>, int> solution_distribution; /// set of all found solutions
-    int iteration_count; /// number of finished
+    int iteration_count; /// number of finished iterations
+    int checked_sets_count; /// number of sets checked
     int raw_solution_count; /// number of found solutions, including duplicates
     Timewatch tw; /// timer that is used for getting calculation time
+    Random rnd; /// random number generator
 
     //=============--- constructors and destructors
     Cube_Product_Checker();
@@ -96,10 +98,13 @@ public:
     void clear_sets(); /// clear current sets of vectors
     void add_vector_to_set(int index); /// add vector to current sets
     bool check_vectors_for_goodness(); /// check current set of vectors
+    void clear_statistics(); /// clear statistics of solutions
+    void make_random_candidate(); /// make random candidate solution
 
     //=============--- searching for solution
     bool check_for_good_vectors(); /// check all solution space
     bool check_for_good_vectors_randomized(); /// do random search
+    bool solve_local_search(); /// do local search
 
     //=============--- utilities
     void output_vector(Multiplication_Vector v) const; /// output vector to screen
@@ -174,6 +179,7 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 init(int mult_count)
 {
+    rnd.init(0, m_count-1);
     f_count = mult_count;
     r_vectors = new mm_vector_with_properties<NM>[element_count];
     m_vectors = new mm_vector_with_properties<NM>[m_count];
@@ -658,6 +664,40 @@ add_vector_to_set(int index)
 //=============================================================================
 
 /**
+ * Clear statistics.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+clear_statistics()
+{
+    checked_sets_count = 0;
+    iteration_count = 0;
+}
+
+//=============================================================================
+
+/**
+ * Make a random candidate.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+make_random_candidate()
+{
+    clear_sets();
+    for (int i = 0; i < (f_count-element_count); ++i) {
+        int cc = rnd.next();
+        while (n_vectors_indexes.count(cc) > 0) {
+            cc = rnd.next();
+        }
+        add_vector_to_set(cc);
+    }
+}
+
+//=============================================================================
+
+/**
  * Check the current set for being a solution.
  *
  * @return true if the current set is a solution.
@@ -708,6 +748,7 @@ check_vectors_for_goodness()
 #ifdef VERY_DETAILED_OUTPUT
     std::cout << "  [" << tw.watch() << " s] Done." << std::endl;
 #endif // VERY_DETAILED_OUTPUT
+    ++checked_sets_count;
     if (good_vectors_indexes.size() >= f_count) { // there is a solution
 #ifdef VERBOSE_OUTPUT
         std::cout << "  Good vectors have been found: { ";
@@ -741,6 +782,7 @@ bool
 Cube_Product_Checker<2, 2, 16, 4>::
 check_for_good_vectors()
 {
+    clear_statistics();
 #ifdef OUTPUT_STATISTICS
     solutions.clear();
     solution_distribution.clear();
@@ -776,6 +818,7 @@ bool
 Cube_Product_Checker<2, 3, 512, 8>::
 check_for_good_vectors()
 {
+    clear_statistics();
     solutions.clear();
     for (int c1 = 0; c1 < m_count-6; ++c1)
         for (int c2 = c1+1; c2 < m_count-5; ++c2)
@@ -810,7 +853,28 @@ bool
 Cube_Product_Checker<N, D, NM, NMH>::
 check_for_good_vectors_randomized()
 {
-    iteration_count = 0;
+    clear_statistics();
+    while (true) {
+        make_random_candidate();
+        if (check_vectors_for_goodness())
+            return true;
+    }
+    return false;
+}
+
+//=============================================================================
+
+/**
+ * Check solutions by doing local search.
+ *
+ * @return true if a solution was found.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+bool
+Cube_Product_Checker<N, D, NM, NMH>::
+solve_local_search()
+{
+    clear_statistics();
     Random rnd(0, m_count-1);
     while (true) {
         clear_sets();

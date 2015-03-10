@@ -58,8 +58,10 @@ public:
 class Random {
 public:
     std::mt19937 generator;
-    std::uniform_int_distribution<int> distribution;
-    Random(int i, int s); /// Init with interval [i,s].
+    std::uniform_int_distribution<int>* distribution;
+    Random();
+    ~Random();
+    void init(int i, int s); /// Init with interval [i,s].
     int next(); /// Return random integer form the interval.
 };
 
@@ -144,16 +146,29 @@ Timewatch::watch()
 
 //=============================================================================
 
+Random::Random() :
+    generator(std::chrono::system_clock::now().time_since_epoch().count())
+{
+    distribution = new std::uniform_int_distribution<int>(0, 1);
+}
+
+Random::~Random()
+{
+    delete distribution;
+}
+
 /**
  * Init with interval [i,s].
  *
  * @param lower bound of the interval (inclusive);
  * @param upper bound of the interval (inclusive).
  */
-Random::Random(int i, int s) :
-    generator(std::chrono::system_clock::now().time_since_epoch().count()),
-    distribution(i,s)
+void
+Random::
+init(int i, int s)
 {
+    delete distribution;
+    distribution = new std::uniform_int_distribution<int>(i, s);
 }
 
 /**
@@ -162,9 +177,10 @@ Random::Random(int i, int s) :
  * @return resulting random number.
  */
 int
-Random::next()
+Random::
+next()
 {
-    return distribution(generator);
+    return (*distribution)(generator);
 }
 
 //=============================================================================
@@ -198,7 +214,8 @@ void
 mm_vector_with_properties<N>::
 make_options(mm_vector_with_properties_options& o)
 {
-    Random g(0, N-1);
+    Random g;
+    g.init(0, N-1);
     for (int i = 0; i < rnd_size; ++i) {
         std::set<int> c;
         for (int j = 0; j < rnd_count; ++j) {
