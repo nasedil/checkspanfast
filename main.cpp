@@ -8,9 +8,9 @@
  * @version pre-alpha
  */
 
-#define VERBOSE_OUTPUT /// output verbose information
+//#define VERBOSE_OUTPUT /// output verbose information
 //#define VERY_DETAILED_OUTPUT /// output even more information
-#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
+//#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 #define OUTPUT_STATISTICS
 
 #include <iostream>
@@ -191,26 +191,20 @@ void test(int n, int d)
     }
     Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
     checker->init(7);
-    checker->check_for_good_vectors();
-    checker->save_results("./solutions-2x2.txt");
-    bool all_right = true;
-    Solution_Properties sp;
-    Solution_Properties best_solution;
-    best_solution.operation_count = 1000000;
-    for (auto s: checker->solutions) {
-        bool is_real = checker->check_solution(s, sp);
-        if (best_solution.operation_count > sp.operation_count) {
-            best_solution = sp;
-        }
-        if (!is_real) {
-            all_right = false;
-        }
+    Timewatch tw;
+    int times = 100;
+    int iterations;
+    std::cout << "Start testing different search algorithms..." << std::endl;
+    //----- test random search
+    tw.watch();
+    iterations = 0;
+    for (int i = 0; i < times; ++i) {
+        checker->check_for_good_vectors_randomized();
+        iterations += checker->iteration_count;
     }
-    if (all_right) {
-        std::cout << "All solutions are checked and right." << std::endl;
-    } else {
-        std::cout << "All solutions are checked and there are problems!" << std::endl;
-    }
-    checker->save_solution_properties(best_solution, "./solution-2x2-best.txt");
+    std::cout << "Random search: " << tw.watch()/times << " s / "
+              << 1.0*iterations/times << " iterations" << std::endl;
+    //----- end
+    std::cout << "Testing finished." << std::endl;
     delete checker;
 }

@@ -57,7 +57,7 @@ public:
  */
 class Random {
 public:
-    std::default_random_engine generator;
+    std::mt19937 generator;
     std::uniform_int_distribution<int> distribution;
     Random(int i, int s); /// Init with interval [i,s].
     int next(); /// Return random integer form the interval.
