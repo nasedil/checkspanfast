@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 #include <numeric>
+#include <omp.h>
 
 #include <boost/dynamic_bitset.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -47,6 +48,7 @@ class Cube_Product_Checker {
 public:
     typedef mm_bitset<NM> Multiplication_Vector;
     typedef mm_bitset<NMH> Multiplication_Part_Vector;
+    typedef std::set<int> Candidate;
     int length; /// size of cube (N)
     int dimension; /// dimension of cube (D)
     int element_count; /// number of elements in cube (N^D)
@@ -59,11 +61,16 @@ public:
     int f_count; /// number of vectors to choose for a basis (for minimal improvement it is N^(D+1)-1)
     std::set<int> good_vectors_indexes; /// set of indexes for vectors that are in the current span
     std::set<int> n_vectors_indexes; /// set of indexes of current chosen vectors
+    std::set<Candidate> neighbours; /// set of neighbours;
     std::set<std::set<int>> solutions; /// set of found unique solutions
     std::map<std::set<int>, int> solution_distribution; /// set of all found solutions
     int iteration_count; /// number of finished iterations
+    int local_max_iterations; /// number of iterations in probable local maximum
+    int restarts; /// number of restarts
+    int local_iterations; /// number of iterations
     int checked_sets_count; /// number of sets checked
     int raw_solution_count; /// number of found solutions, including duplicates
+    int best_result; /// maximum number of vectors in the span found
     Timewatch tw; /// timer that is used for getting calculation time
     Random rnd; /// random number generator
 
@@ -87,6 +94,7 @@ public:
     /// return index of multiplication vector in the set
     int get_m_index(int i, int j) const; /// for 2-d case
     int get_m_index(int i, int j, int k) const; /// for 3-d case
+    std::vector<int> decode_m_index(int index) const; /// return the coefficients from m-vector index
 
     //=============--- Initial calculations
     void init(int mult_count); /// calculate all properties
@@ -104,7 +112,8 @@ public:
     //=============--- searching for solution
     bool check_for_good_vectors(); /// check all solution space
     bool check_for_good_vectors_randomized(); /// do random search
-    bool solve_local_search(); /// do local search
+    bool solve_hill_climbing(int local_max_limit); /// do local search
+    void start_neighbourhood(); /// make list of neighbours
 
     //=============--- utilities
     void output_vector(Multiplication_Vector v) const; /// output vector to screen
@@ -492,6 +501,34 @@ get_m_index(int i, int j, int k) const
 //=============================================================================
 
 /**
+ * Get coefficients of cube elements by number of multiplication vector.
+ *
+ * @param multiplication vector index.
+ *
+ * @return
+ */
+template <int N, int D, size_t NM, size_t NMH>
+inline std::vector<int>
+Cube_Product_Checker<N, D, NM, NMH>::
+decode_m_index(int index) const
+{
+    int last, previous;
+    last = index % m_length;
+    index /= m_length;
+    previous = index % m_length;
+    std::vector<int> result;
+    if (dimension == 3) {
+        int first = index / m_length;
+        result.push_back(first);
+    }
+    result.push_back(previous);
+    result.push_back(last);
+    return result;
+}
+
+//=============================================================================
+
+/**
  * Calculate product result vectors (2x2 case).
  */
 template <>
@@ -673,6 +710,12 @@ clear_statistics()
 {
     checked_sets_count = 0;
     iteration_count = 0;
+    best_result = 0;
+#ifdef OUTPUT_STATISTICS
+    raw_solution_count = 0;
+    solutions.clear();
+    solution_distribution.clear();
+#endif // OUTPUT_STATISTICS
 }
 
 //=============================================================================
@@ -708,6 +751,7 @@ Cube_Product_Checker<N, D, NM, NMH>::
 check_vectors_for_goodness()
 {
 #ifdef VERY_DETAILED_OUTPUT
+    std::cout << "[" << omp_get_thread_num() << "]";
     std::cout << "Checking of vectors { ";
     for (int i: n_vectors_indexes) {
         std::cout << i << " ";
@@ -749,6 +793,7 @@ check_vectors_for_goodness()
     std::cout << "  [" << tw.watch() << " s] Done." << std::endl;
 #endif // VERY_DETAILED_OUTPUT
     ++checked_sets_count;
+    best_result = good_vectors_indexes.size();
     if (good_vectors_indexes.size() >= f_count) { // there is a solution
 #ifdef VERBOSE_OUTPUT
         std::cout << "  Good vectors have been found: { ";
@@ -783,12 +828,8 @@ Cube_Product_Checker<2, 2, 16, 4>::
 check_for_good_vectors()
 {
     clear_statistics();
-#ifdef OUTPUT_STATISTICS
-    solutions.clear();
-    solution_distribution.clear();
-#endif // OUTPUT_STATISTICS
-    raw_solution_count = 0;
     for (int c1 = 0; c1 < m_count-2; ++c1) {
+        //std::cout << c1 << std::endl;
         for (int c2 = c1+1; c2 < m_count-1; ++c2) {
             for (int c3 = c2+1; c3 < m_count; ++c3) {
                 clear_sets();
@@ -805,7 +846,7 @@ check_for_good_vectors()
             }
         }
     }
-    return (solutions.size() > 0);
+    return true;
 }
 
 /**
@@ -819,7 +860,6 @@ Cube_Product_Checker<2, 3, 512, 8>::
 check_for_good_vectors()
 {
     clear_statistics();
-    solutions.clear();
     for (int c1 = 0; c1 < m_count-6; ++c1)
         for (int c2 = c1+1; c2 < m_count-5; ++c2)
             for (int c3 = c2+1; c3 < m_count-4; ++c3)
@@ -865,6 +905,70 @@ check_for_good_vectors_randomized()
 //=============================================================================
 
 /**
+ * Make neighbourhood of the current candidate.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+start_neighbourhood()
+{
+    //std::cout << "Start making neighbours" << std::endl;
+    neighbours.clear();
+    // all possible one-coefficient changes in one of the vectors
+    for (int i: n_vectors_indexes) {
+        //std::cout << "  start with vector " << i << std::endl;
+        Candidate c_set = Candidate(n_vectors_indexes);
+        c_set.erase(i);
+        std::vector<int> coef = decode_m_index(i);
+        std::vector<Multiplication_Part_Vector> cur_coef;
+        for (int j = 0; j < dimension; ++j) {
+            cur_coef.push_back(Multiplication_Part_Vector(coef[j]+1));
+        }
+#ifdef OUTPUT_STATISTICS
+        int value = cur_coef[0].to_ulong()-1;
+        for (int o = 1; o < dimension; ++o) {
+            value = value*m_length + cur_coef[o].to_ulong()-1;
+        }
+        if (value != i) {
+            std::cout << "Fukken shit! " << value << std::endl;
+        }
+#endif // OUTPUT_STATISTICS
+        for (int j = 0; j < dimension; ++j) {
+            //std::cout << "    start with cube " << j << " with total bits " << cur_coef[j] << std::endl;
+            for (int k = 0; k < cur_coef[j].size(); ++k) {
+                //std::cout << "      start with bit " << k << std::endl;
+                cur_coef[j].flip(k);
+                if (cur_coef[j].count() == 0) {
+                    cur_coef[j].flip(k);
+                    continue;
+                }
+                Candidate new_set = Candidate(c_set);
+                int value = cur_coef[0].to_ulong()-1;
+                for (int o = 1; o < dimension; ++o) {
+                    value = value*m_length + cur_coef[o].to_ulong()-1;
+                }
+#ifdef OUTPUT_STATISTICS
+                if ((value < 0) || (value >= m_count)) {
+                    std::cout << "--->  got value " << value << std::endl
+                              << "--->  after " << i << std::endl
+                              << "--->  on j = " << j << " and k = " << k << std::endl
+                              << "--->  with cur_coef[j] = " << cur_coef[j] << " and it's long as " << cur_coef[j].to_ulong() << std::endl;
+                }
+#endif // OUTPUT_STATISTICS
+                new_set.insert(value);
+                if (new_set.size() == n_vectors_indexes.size()) {
+                    neighbours.insert(new_set);
+                }
+                cur_coef[j].flip(k);
+            }
+        }
+    }
+    //std::cout << "Made " << neighbours.size() << " neigbours." << std::endl;
+}
+
+//=============================================================================
+
+/**
  * Check solutions by doing local search.
  *
  * @return true if a solution was found.
@@ -872,24 +976,69 @@ check_for_good_vectors_randomized()
 template <int N, int D, size_t NM, size_t NMH>
 bool
 Cube_Product_Checker<N, D, NM, NMH>::
-solve_local_search()
+solve_hill_climbing(int local_max_limit)
 {
+    Random r;
     clear_statistics();
-    Random rnd(0, m_count-1);
+    clear_sets();
+    make_random_candidate();
+    check_vectors_for_goodness();
+    local_max_iterations = 0;
+    local_iterations = 0;
+    restarts = 0;
     while (true) {
-        clear_sets();
-        for (int i = 0; i < (f_count-element_count); ++i) {
-            int cc = rnd.next();
-            while (n_vectors_indexes.count(cc) > 0) {
-                cc = rnd.next();
+        if (local_max_iterations > local_max_limit) {
+#ifdef VERBOSE_OUTPUT
+            std::cout << omp_get_thread_num() << "] Doing restart! local iterations = " << local_iterations << " / " << iteration_count << std::endl;
+#endif // VERBOSE_OUTPUT
+            clear_sets();
+            make_random_candidate();
+            check_vectors_for_goodness();
+            local_max_iterations = 0;
+            local_iterations = 0;
+            ++restarts;
+        }
+#ifdef VERBOSE_OUTPUT
+        std::cout << omp_get_thread_num() << "] Iteration " << local_iterations << ": best is " << best_result << std::endl;
+#endif // VERBOSE_OUTPUT
+        if (best_result >= f_count)
+            break;
+        int next_best_result = 0;
+        int old_best_result = best_result;
+        std::vector<Candidate> best_candidates;
+        start_neighbourhood();
+        for (const Candidate& c: neighbours) {
+            n_vectors_indexes = c;
+            good_vectors_indexes.clear();
+            check_vectors_for_goodness();
+            if (best_result > next_best_result) {
+                next_best_result = best_result;
+                best_candidates.clear();
+                best_candidates.push_back(n_vectors_indexes);
+            } else if (best_result == next_best_result) {
+                best_candidates.push_back(n_vectors_indexes);
             }
-            add_vector_to_set(cc);
+        }
+        r.init(0, best_candidates.size()-1);
+        n_vectors_indexes = best_candidates[r.next()];
+        best_result = next_best_result;
+        if (next_best_result > old_best_result) {
+            local_max_iterations = 0;
+        } else {
+            ++local_max_iterations;
         }
         ++iteration_count;
-        if (check_vectors_for_goodness())
-            return true;
+        ++local_iterations;
+        //std::cout << "Iteration " << iteration_count << ": best is " << best_result << std::endl;
     }
-    return false;
+    good_vectors_indexes.clear();
+    check_vectors_for_goodness();
+    if (best_result >= f_count)
+        return true;
+    else {
+        std::cout << "Error!" << std::endl;
+        return false;
+    }
 }
 
 //=============================================================================
