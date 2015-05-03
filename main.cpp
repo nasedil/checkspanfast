@@ -23,6 +23,8 @@
 #include "cpchecker.hpp"
 #include "utils.hpp"
 
+using namespace std;
+
 //=============================================================================
 
 void temp(); /// tests during development process
@@ -61,14 +63,14 @@ int main(int argc ,char** argv)
             }
         }
     } else {
-        std::cout << "Cube Product Checker (version pre-alpha)" << std::endl << std::endl
-                  << "Usage:  cpc <choice> <options>" << std::endl << std::endl
-                  << "Choices are:" << std::endl
-                  << "0  : test" << std::endl
-                  << "1  : gather statistics" << std::endl
-                  << "2  : run in parallel" << std::endl
-                  << "3  : run distributed" << std::endl
-                  << "4  : check solutions" << std::endl << std::endl;
+        cout << "Cube Product Checker (version pre-alpha)" << endl << endl
+                  << "Usage:  cpc <choice> <options>" << endl << endl
+                  << "Choices are:" << endl
+                  << "0  : test" << endl
+                  << "1  : gather statistics" << endl
+                  << "2  : run in parallel" << endl
+                  << "3  : run distributed" << endl
+                  << "4  : check solutions" << endl << endl;
     }
     return 0;
 }
@@ -92,16 +94,16 @@ void temp()
         if (best_solution.operation_count > sp.operation_count) {
             best_solution = sp;
         }
-        checker->save_solution_properties(sp, std::string("./solution-2x2-" + std::to_string(i) + ".txt").c_str());
+        checker->save_solution_properties(sp, string("./solution-2x2-" + to_string(i) + ".txt").c_str());
         if (!is_real) {
             all_right = false;
         }
         ++i;
     }
     if (all_right) {
-        std::cout << "All solutions are checked and right." << std::endl;
+        cout << "All solutions are checked and right." << endl;
     } else {
-        std::cout << "All solutions are checked and there are problems!" << std::endl;
+        cout << "All solutions are checked and there are problems!" << endl;
     }
     checker->save_solution_properties(best_solution, "./solution-2x2-best.txt");
     delete checker;
@@ -112,7 +114,7 @@ void temp()
 void parallel(int p, int n, int d, int limit)
 {
     if (omp_get_num_procs() < p) {
-            std::cout << p << " processors are not available for this machine." << std::endl;
+            cout << p << " processors are not available for this machine." << endl;
             return;
     } else {
         omp_set_num_threads(p);
@@ -139,7 +141,7 @@ void parallel_2x2()
         Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
         checker->init(7);
         if (checker->check_for_good_vectors_randomized()) {
-            std::cout << "Found after " << checker->iteration_count << " iterations.";
+            cout << "Found after " << checker->iteration_count << " iterations.";
         }
         delete checker;
     };
@@ -164,7 +166,7 @@ void parallel_3x3(int limit)
         //}
         checker->tw.thread_count = thread_count;
         if (checker->solve_hill_climbing(limit)) {
-            std::cout << "Found after " << checker->restarts << " restarts and " << checker->checked_sets_count << " checks.";
+            cout << "Found after " << checker->restarts << " restarts and " << checker->checked_sets_count << " checks.";
         }
         delete checker;
     }
@@ -176,7 +178,7 @@ void parallel_2x2x2(int limit)
     master_checker->init(15);
 
     if (master_checker->solve_hill_climbing(limit)) {
-        std::cout << "Found after " << master_checker->restarts << " restarts and " << master_checker->checked_sets_count << " checks.";
+        cout << "Found after " << master_checker->restarts << " restarts and " << master_checker->checked_sets_count << " checks.";
     }
     delete master_checker;
     return;
@@ -193,7 +195,7 @@ void parallel_2x2x2(int limit)
         }
         checker->tw.thread_count = thread_count;
         if (checker->check_for_good_vectors_randomized()) {
-            std::cout << "Found after " << checker->iteration_count << " iterations.";
+            cout << "Found after " << checker->iteration_count << " iterations.";
         }
         delete checker;
     }
@@ -202,7 +204,7 @@ void parallel_2x2x2(int limit)
 void test(int n, int d, int t, int limit)
 {
     if ((n != 2) || (d != 2)) {
-        std::cout << "The suite not ready yet.";
+        cout << "The suite not ready yet.";
         return;
     }
     Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
@@ -214,15 +216,15 @@ void test(int n, int d, int t, int limit)
     int lin_dependent_sets;
     int iteration_count;
     int restarts;
-    std::cout << "Start testing different search algorithms..." << std::endl;
+    cout << "Start testing different search algorithms..." << endl;
     //----- test full space
     tw.watch();
     checker->check_for_good_vectors();
-    std::cout << "Full search: " << tw.watch() << " s / "
-              << checker->checked_sets_count << " checked sets" << std::endl;
-    std::cout << "    " << checker->lin_dependent_sets << " linearly dependent sets" << std::endl;
+    cout << "Full search: " << tw.watch() << " s / "
+              << checker->checked_sets_count << " checked sets" << endl;
+    cout << "    " << checker->lin_dependent_sets << " linearly dependent sets" << endl;
 #ifdef USE_CACHE
-    std::cout << "    " << checker->cache_hits << " cache hits" << std::endl;
+    cout << "    " << checker->cache_hits << " cache hits" << endl;
 #endif // USE_CACHE
     //----- test random search
     tw.watch();
@@ -234,20 +236,20 @@ void test(int n, int d, int t, int limit)
         lin_dependent_sets += checker->lin_dependent_sets;
 #ifdef OUTPUT_STATISTICS
         if (!checker->check_solution(checker->good_vectors_indexes, sp)) {
-            std::cout << "Found solution is not correct!!!" << std::endl;
-            std::cout << "  Result is [ ";
+            cout << "Found solution is not correct!!!" << endl;
+            cout << "  Result is [ ";
             for (int i: checker->good_vectors_indexes) {
-                std::cout << i << " ";
+                cout << i << " ";
             }
-            std::cout << "]" << std::endl;
+            cout << "]" << endl;
         }
 #endif // OUTPUT_STATISTICS
     }
-    std::cout << "Random search: " << tw.watch()/times << " s / "
-              << 1.0*checked_sets_count/times << " checked sets" << std::endl;
-    std::cout << "    " << 1.0*lin_dependent_sets/times << " linearly dependent sets" << std::endl;
+    cout << "Random search: " << tw.watch()/times << " s / "
+              << 1.0*checked_sets_count/times << " checked sets" << endl;
+    cout << "    " << 1.0*lin_dependent_sets/times << " linearly dependent sets" << endl;
 #ifdef USE_CACHE
-    std::cout << "    " << checker->cache_hits << " cache hits" << std::endl;
+    cout << "    " << checker->cache_hits << " cache hits" << endl;
 #endif // USE_CACHE
     //----- test hill climbing
     tw.watch();
@@ -263,24 +265,24 @@ void test(int n, int d, int t, int limit)
         iteration_count += checker->iteration_count;
 #ifdef OUTPUT_STATISTICS
         if (!checker->check_solution(checker->good_vectors_indexes, sp)) {
-            std::cout << "Found solution is not correct!!!" << std::endl;
-            std::cout << "  Result is [ ";
+            cout << "Found solution is not correct!!!" << endl;
+            cout << "  Result is [ ";
             for (int i: checker->good_vectors_indexes) {
-                std::cout << i << " ";
+                cout << i << " ";
             }
-            std::cout << "]" << std::endl;
+            cout << "]" << endl;
         }
 #endif // OUTPUT_STATISTICS
     }
-    std::cout << "Hill climbing with restarts: " << tw.watch()/times << " s / "
+    cout << "Hill climbing with restarts: " << tw.watch()/times << " s / "
               << 1.0*checked_sets_count/times << " checked sets / "
               << 1.0*restarts/times << " restarts / "
-              << 1.0*iteration_count/times << " iterations" << std::endl;
-    std::cout << "    " << 1.0*lin_dependent_sets/times << " linearly dependent sets" << std::endl;
+              << 1.0*iteration_count/times << " iterations" << endl;
+    cout << "    " << 1.0*lin_dependent_sets/times << " linearly dependent sets" << endl;
 #ifdef USE_CACHE
-    std::cout << "    " << checker->cache_hits << " cache hits" << std::endl;
+    cout << "    " << checker->cache_hits << " cache hits" << endl;
 #endif // USE_CACHE
     //----- end
-    std::cout << "Testing finished." << std::endl;
+    cout << "Testing finished." << endl;
     delete checker;
 }

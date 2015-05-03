@@ -27,6 +27,8 @@
 #include "slae.hpp"
 #include "utils.hpp"
 
+using namespace std;
+
 //=============================================================================
 
 class Solution_Properties;
@@ -48,7 +50,7 @@ class Cube_Product_Checker {
 public:
     typedef mm_bitset<NM> Multiplication_Vector;
     typedef mm_bitset<NMH> Multiplication_Part_Vector;
-    typedef std::set<int> Candidate;
+    typedef set<int> Candidate;
     int length; /// size of cube (N)
     int dimension; /// dimension of cube (D)
     int element_count; /// number of elements in cube (N^D)
@@ -59,11 +61,11 @@ public:
     int m_count; /// number of non-zero multiplication vectors = (2^(N^D)-1)^D
     int m_length; /// number non-zero element sums = 2^(N^D)-1
     int f_count; /// number of vectors to choose for a basis (for minimal improvement it is N^(D+1)-1)
-    std::set<int> good_vectors_indexes; /// set of indexes for vectors that are in the current span
-    std::set<int> n_vectors_indexes; /// set of indexes of current chosen vectors
-    std::set<Candidate> neighbours; /// set of neighbours;
-    std::set<std::set<int>> solutions; /// set of found unique solutions
-    std::map<std::set<int>, int> solution_distribution; /// set of all found solutions
+    set<int> good_vectors_indexes; /// set of indexes for vectors that are in the current span
+    set<int> n_vectors_indexes; /// set of indexes of current chosen vectors
+    set<Candidate> neighbours; /// set of neighbours;
+    set<set<int>> solutions; /// set of found unique solutions
+    map<set<int>, int> solution_distribution; /// set of all found solutions
     int iteration_count; /// number of finished iterations
     int local_max_iterations; /// number of iterations in probable local maximum
     int restarts; /// number of restarts
@@ -74,7 +76,7 @@ public:
     int lin_dependent_sets;
     Timewatch tw; /// timer that is used for getting calculation time
     Random rnd; /// random number generator
-    std::map<Candidate, int> candidate_cache; /// cache of already checked candidates
+    map<Candidate, int> candidate_cache; /// cache of already checked candidates
     int cache_limit; /// limit of the cache size
     int cache_hits; /// cache hits
 
@@ -98,7 +100,7 @@ public:
     /// return index of multiplication vector in the set
     int get_m_index(int i, int j) const; /// for 2-d case
     int get_m_index(int i, int j, int k) const; /// for 3-d case
-    std::vector<int> decode_m_index(int index) const; /// return the coefficients from m-vector index
+    vector<int> decode_m_index(int index) const; /// return the coefficients from m-vector index
 
     //=============--- Initial calculations
     void init(int mult_count); /// calculate all properties
@@ -129,17 +131,17 @@ public:
 
     //=============--- Statistics and results
     void save_results(const char* filename); /// save results to a file
-    bool check_solution(std::set<int> s, Solution_Properties& sp); /// check if a solution is valid
+    bool check_solution(set<int> s, Solution_Properties& sp); /// check if a solution is valid
     void save_solution_properties(const Solution_Properties& sp, const char* filename); /// output solution properties to a file
-    std::vector<int> sum_operations_cube(int index); /// number of summation operations inside cubes
+    vector<int> sum_operations_cube(int index); /// number of summation operations inside cubes
 };
 
 //=============================================================================
 
 class Solution_Properties {
 public:
-    std::set<int> multiplication_vectors; /// multiplication vector indices
-    std::vector<boost::dynamic_bitset<>> coefficients; /// result vector coefficients
+    set<int> multiplication_vectors; /// multiplication vector indices
+    vector<boost::dynamic_bitset<>> coefficients; /// result vector coefficients
     int operation_count; /// number of addition operations used for calculating result matrix overall
 };
 
@@ -163,7 +165,7 @@ Cube_Product_Checker() :
     m_length = power(2,element_count)-1;
     m_count = power(m_length,dimension);
 #ifdef VERBOSE_OUTPUT
-    std::cout << "Cube Product Checker has been created." << std::endl;
+    cout << "Cube Product Checker has been created." << endl;
 #endif // VERBOSE_OUTPUT
 }
 
@@ -210,14 +212,14 @@ init(int mult_count)
         r_vectors[i].calculate_properties(vector_options);
     }
 #ifdef VERBOSE_OUTPUT
-    std::cout << "[" << tw.watch() << " s] Result vectors calculated." << std::endl;
+    cout << "[" << tw.watch() << " s] Result vectors calculated." << endl;
 #endif // VERBOSE_OUTPUT
     calculate_m_vectors();
     for (int i = 0; i < m_count; ++i) {
         m_vectors[i].calculate_properties(vector_options);
     }
 #ifdef VERBOSE_OUTPUT
-    std::cout << "[" << tw.watch() << " s] Multiplication vectors calculated." << std::endl;
+    cout << "[" << tw.watch() << " s] Multiplication vectors calculated." << endl;
 #endif // VERBOSE_OUTPUT
 }
 
@@ -516,7 +518,7 @@ get_m_index(int i, int j, int k) const
  * @return
  */
 template <int N, int D, size_t NM, size_t NMH>
-inline std::vector<int>
+inline vector<int>
 Cube_Product_Checker<N, D, NM, NMH>::
 decode_m_index(int index) const
 {
@@ -524,7 +526,7 @@ decode_m_index(int index) const
     last = index % m_length;
     index /= m_length;
     previous = index % m_length;
-    std::vector<int> result;
+    vector<int> result;
     if (dimension == 3) {
         int first = index / m_length;
         result.push_back(first);
@@ -759,7 +761,7 @@ bool
 Cube_Product_Checker<N, D, NM, NMH>::
 check_cache()
 {
-    std::map<Candidate, int>::const_iterator it;
+    map<Candidate, int>::const_iterator it;
     if ((it = candidate_cache.find(n_vectors_indexes)) != candidate_cache.end()) {
         best_result = it->second;
         ++cache_hits;
@@ -781,7 +783,7 @@ update_cache()
 {
     if (candidate_cache.size() >= cache_limit) {
         candidate_cache.clear();
-        //std::cout << "------------->> Cache cleared" << std::endl;
+        //cout << "------------->> Cache cleared" << endl;
     }
     candidate_cache[n_vectors_indexes] = best_result;
 }
@@ -799,12 +801,12 @@ Cube_Product_Checker<N, D, NM, NMH>::
 check_vectors_for_goodness()
 {
 #ifdef VERY_DETAILED_OUTPUT
-    std::cout << "[" << omp_get_thread_num() << "]";
-    std::cout << "Checking of vectors { ";
+    cout << "[" << omp_get_thread_num() << "]";
+    cout << "Checking of vectors { ";
     for (int i: n_vectors_indexes) {
-        std::cout << i << " ";
+        cout << i << " ";
     }
-    std::cout << "} has started..." << std::endl;
+    cout << "} has started..." << endl;
     tw.watch();
 #endif // VERY_DETAILED_OUTPUT
     ++checked_sets_count;
@@ -817,13 +819,13 @@ check_vectors_for_goodness()
         }
     }
 #endif // USE_CACHE
-    std::vector<mm_vector_with_properties<NM>> nvwp; /// set of span vectors for SLAE
-    std::vector<mm_vector_with_properties<NM>> gvwp; /// set of good vectors for SLAE
+    vector<mm_vector_with_properties<NM>> nvwp; /// set of span vectors for SLAE
+    vector<mm_vector_with_properties<NM>> gvwp; /// set of good vectors for SLAE
     Vectors_Presolve_Data<NM> v; /// vector presolve data for span vectors
     Gauss_WP_Presolve_Data<NM> pwp; /// presolve data for SLAE for span vectors
     Gauss_WP_Presolve_Data<NM> pwpg; /// presolve data for SLAE for good vectors
 
-    for (std::set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i) {
+    for (set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i) {
         nvwp.push_back(m_vectors[*i]);
         v.add_vector(m_vectors[*i].v);
     }
@@ -854,7 +856,7 @@ check_vectors_for_goodness()
         }
     }
 #ifdef VERY_DETAILED_OUTPUT
-    std::cout << "  [" << tw.watch() << " s] Done." << std::endl;
+    cout << "  [" << tw.watch() << " s] Done." << endl;
 #endif // VERY_DETAILED_OUTPUT
     best_result = good_vectors_indexes.size();
 #ifdef USE_CACHE
@@ -862,16 +864,16 @@ check_vectors_for_goodness()
 #endif // USE_CACHE
     if (good_vectors_indexes.size() >= f_count) { // there is a solution
 #ifdef VERBOSE_OUTPUT
-        std::cout << "  Good vectors have been found: { ";
-        for (std::set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc) {
-            std::cout << *cc << " ";
+        cout << "  Good vectors have been found: { ";
+        for (set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc) {
+            cout << *cc << " ";
         }
-        std::cout << "}" << std::endl;
+        cout << "}" << endl;
 #endif // VERBOSE_OUTPUT
 #ifdef OUTPUT_SOLUTIONS_TO_FILE
-        std::ofstream mvfile("good.txt");
+        ofstream mvfile("good.txt");
         mvfile << "Found good vectors!!!\n";
-        for (std::set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc) {
+        for (set<int>::iterator cc = good_vectors_indexes.begin(); cc != good_vectors_indexes.end(); ++cc) {
             mvfile << *cc << " ";
         }
         mvfile << "\n";
@@ -895,7 +897,7 @@ check_for_good_vectors()
 {
     clear_statistics();
     for (int c1 = 0; c1 < m_count-2; ++c1) {
-        //std::cout << c1 << std::endl;
+        //cout << c1 << endl;
         for (int c2 = c1+1; c2 < m_count-1; ++c2) {
             for (int c3 = c2+1; c3 < m_count; ++c3) {
                 clear_sets();
@@ -978,15 +980,15 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 start_neighbourhood()
 {
-    //std::cout << "Start making neighbours" << std::endl;
+    //cout << "Start making neighbours" << endl;
     neighbours.clear();
     // all possible one-coefficient changes in one of the vectors
     for (int i: n_vectors_indexes) {
-        //std::cout << "  start with vector " << i << std::endl;
+        //cout << "  start with vector " << i << endl;
         Candidate c_set = Candidate(n_vectors_indexes);
         c_set.erase(i);
-        std::vector<int> coef = decode_m_index(i);
-        std::vector<Multiplication_Part_Vector> cur_coef;
+        vector<int> coef = decode_m_index(i);
+        vector<Multiplication_Part_Vector> cur_coef;
         for (int j = 0; j < dimension; ++j) {
             cur_coef.push_back(Multiplication_Part_Vector(coef[j]+1));
         }
@@ -996,13 +998,13 @@ start_neighbourhood()
             value = value*m_length + cur_coef[o].to_ulong()-1;
         }
         if (value != i) {
-            std::cout << "Hardcore error here! " << value << std::endl;
+            cout << "Hardcore error here! " << value << endl;
         }
 #endif // OUTPUT_STATISTICS
         for (int j = 0; j < dimension; ++j) {
-            //std::cout << "    start with cube " << j << " with total bits " << cur_coef[j] << std::endl;
+            //cout << "    start with cube " << j << " with total bits " << cur_coef[j] << endl;
             for (int k = 0; k < cur_coef[j].size(); ++k) {
-                //std::cout << "      start with bit " << k << std::endl;
+                //cout << "      start with bit " << k << endl;
                 cur_coef[j].flip(k);
                 if (cur_coef[j].count() == 0) {
                     cur_coef[j].flip(k);
@@ -1015,10 +1017,10 @@ start_neighbourhood()
                 }
 #ifdef OUTPUT_STATISTICS
                 if ((value < 0) || (value >= m_count)) {
-                    std::cout << "--->  got value " << value << std::endl
-                              << "--->  after " << i << std::endl
-                              << "--->  on j = " << j << " and k = " << k << std::endl
-                              << "--->  with cur_coef[j] = " << cur_coef[j] << " and it's long as " << cur_coef[j].to_ulong() << std::endl;
+                    cout << "--->  got value " << value << endl
+                              << "--->  after " << i << endl
+                              << "--->  on j = " << j << " and k = " << k << endl
+                              << "--->  with cur_coef[j] = " << cur_coef[j] << " and it's long as " << cur_coef[j].to_ulong() << endl;
                 }
 #endif // OUTPUT_STATISTICS
                 new_set.insert(value);
@@ -1029,7 +1031,7 @@ start_neighbourhood()
             }
         }
     }
-    //std::cout << "Made " << neighbours.size() << " neigbours." << std::endl;
+    //cout << "Made " << neighbours.size() << " neigbours." << endl;
 }
 
 //=============================================================================
@@ -1055,7 +1057,7 @@ solve_hill_climbing(int local_max_limit)
     while (true) {
         if (local_max_iterations > local_max_limit) {
 #ifdef VERBOSE_OUTPUT
-            std::cout << omp_get_thread_num() << "] Doing restart! local iterations = " << local_iterations << " / " << iteration_count << std::endl;
+            cout << omp_get_thread_num() << "] Doing restart! local iterations = " << local_iterations << " / " << iteration_count << endl;
 #endif // VERBOSE_OUTPUT
             clear_sets();
             make_random_candidate();
@@ -1065,13 +1067,13 @@ solve_hill_climbing(int local_max_limit)
             ++restarts;
         }
 #ifdef VERBOSE_OUTPUT
-        std::cout << omp_get_thread_num() << "] Iteration " << local_iterations << ": best is " << best_result << std::endl;
+        cout << omp_get_thread_num() << "] Iteration " << local_iterations << ": best is " << best_result << endl;
 #endif // VERBOSE_OUTPUT
         if (best_result >= f_count)
             break;
         int next_best_result = 0;
         int old_best_result = best_result;
-        std::vector<Candidate> best_candidates;
+        vector<Candidate> best_candidates;
         start_neighbourhood();
         for (const Candidate& c: neighbours) {
             n_vectors_indexes = c;
@@ -1095,14 +1097,14 @@ solve_hill_climbing(int local_max_limit)
         }
         ++iteration_count;
         ++local_iterations;
-        //std::cout << "Iteration " << iteration_count << ": best is " << best_result << std::endl;
+        //cout << "Iteration " << iteration_count << ": best is " << best_result << endl;
     }
     good_vectors_indexes.clear();
     check_vectors_for_goodness();
     if (best_result >= f_count)
         return true;
     else {
-        std::cout << "Error!" << std::endl;
+        cout << "Error!" << endl;
         return false;
     }
 }
@@ -1119,7 +1121,7 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 output_vector(Multiplication_Vector v) const
 {
-    std::cout << v;
+    cout << v;
 }
 
 //=============================================================================
@@ -1138,7 +1140,7 @@ output_vector_text(Multiplication_Vector v) const
         if (v[i]) {
             int ai, aj, bi, bj;
             decode_indices_from_index(i, ai, aj, bi, bj);
-            std::cout << "A" << ai+1 << aj+1 << "B" << bi+1 << bj+1 << " ";
+            cout << "A" << ai+1 << aj+1 << "B" << bi+1 << bj+1 << " ";
         }
     }
 }
@@ -1156,7 +1158,7 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 save_random_samples(int size, const char* filename) const
 {
-    std::ofstream fout(filename);
+    ofstream fout(filename);
     Random rnd(0, m_count-1);
     fout << size << "\n";
     for (int i = 0; i < size; ++i) {
@@ -1186,8 +1188,8 @@ template <int N, int D, size_t NM, size_t NMH>
 void Cube_Product_Checker<N, D, NM, NMH>::
 read_samples_and_check(const char* filenamein, const char* filenameout) const
 {
-    std::ifstream fin(filenamein);
-    std::ofstream fout(filenameout, std::ios_base::app);
+    ifstream fin(filenamein);
+    ofstream fout(filenameout, ios_base::app);
     fout << "\n ################################### \n";
     int size;
     fin >> size;
@@ -1196,7 +1198,7 @@ read_samples_and_check(const char* filenamein, const char* filenameout) const
     int gv = 0;
     for (int i = 0; i < size; ++i) {
         if (N*D > 5) {
-            std::cout << "working on case " << i << "\n";
+            cout << "working on case " << i << "\n";
         }
         clear_sets();
         for (int i = 0; i < (f_count-element_count); ++i) {
@@ -1214,7 +1216,7 @@ read_samples_and_check(const char* filenamein, const char* filenameout) const
             fout << "\t" << i << ": " << curtime << " s\n";
         }
     }
-    std::cout << "Found " << gv << " solutions\n";
+    cout << "Found " << gv << " solutions\n";
     fout << "Total time: " << time << " s (" << (time/size) << " s avg) (found " << gv << " good vectors)\n";
     fout.close();
 }
@@ -1230,15 +1232,15 @@ template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
 save_results(const char* filename) {
-    std::ofstream fout(filename);
-    fout << "Results: " << solutions.size() << " different solutions were found." << std::endl;
-    fout << raw_solution_count << " vector sets were successful." << std::endl;
-    std::map<int, int> vector_distribution = std::map<int, int>();
-    std::vector<std::map<int, int>> bit_distributions;
-    for (std::set<std::set<int>>::iterator i = solutions.begin(); i != solutions.end(); ++i) {
+    ofstream fout(filename);
+    fout << "Results: " << solutions.size() << " different solutions were found." << endl;
+    fout << raw_solution_count << " vector sets were successful." << endl;
+    map<int, int> vector_distribution = map<int, int>();
+    vector<map<int, int>> bit_distributions;
+    for (set<set<int>>::iterator i = solutions.begin(); i != solutions.end(); ++i) {
         fout << "[ ";
-        std::map<int, int> bd;
-        for (std::set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j) {
+        map<int, int> bd;
+        for (set<int>::iterator j = (*i).begin(); j != (*i).end(); ++j) {
             fout << (*j) << " ";
             ++vector_distribution[*j];
             for (size_t k = 0; k < m_vectors[*j].v.size(); ++k) {
@@ -1248,18 +1250,18 @@ save_results(const char* filename) {
             }
         }
         bit_distributions.push_back(bd);
-        fout << "] : " << solution_distribution[(*i)] << std::endl;
+        fout << "] : " << solution_distribution[(*i)] << endl;
     }
-    fout << std::endl << "Used vectors are:" << std::endl;
+    fout << endl << "Used vectors are:" << endl;
     for (const auto& e: vector_distribution) {
-        fout << e.first << "\t" << m_vectors[e.first].v << " : " << e.second << std::endl;
+        fout << e.first << "\t" << m_vectors[e.first].v << " : " << e.second << endl;
     }
-    fout << std::endl << "Bit distributions per solution are:" << std::endl;
+    fout << endl << "Bit distributions per solution are:" << endl;
     for (auto& e: bit_distributions) {
         for (int i = 0; i < NM; ++i) {
             fout << e[i];
         }
-        fout << std::endl;
+        fout << endl;
     }
     fout.close();
 }
@@ -1278,16 +1280,16 @@ save_results(const char* filename) {
 template <int N, int D, size_t NM, size_t NMH>
 bool
 Cube_Product_Checker<N, D, NM, NMH>::
-check_solution(std::set<int> s, Solution_Properties& sp) {
+check_solution(set<int> s, Solution_Properties& sp) {
     sp.coefficients.clear();
     sp.multiplication_vectors.clear();
     sp.multiplication_vectors = s;
     sp.operation_count = 0;
-    std::vector<mm_bitset<NM>> vectors;
+    vector<mm_bitset<NM>> vectors;
     for (auto i: s) {
         vectors.push_back(m_vectors[i].v);
-        std::vector<int> ops = sum_operations_cube(i);
-        sp.operation_count += std::accumulate(ops.begin(), ops.end(), -ops.size());
+        vector<int> ops = sum_operations_cube(i);
+        sp.operation_count += accumulate(ops.begin(), ops.end(), -ops.size());
     }
     for (int i = 0; i < element_count; ++i) {
         if (!gauss_solve(vectors, r_vectors[i].v)) {
@@ -1310,11 +1312,11 @@ check_solution(std::set<int> s, Solution_Properties& sp) {
  * @return list of operation count for each cube.
  */
 template <int N, int D, size_t NM, size_t NMH>
-std::vector<int>
+vector<int>
 Cube_Product_Checker<N, D, NM, NMH>::
 sum_operations_cube(int index)
 {
-    std::vector<int> result;
+    vector<int> result;
     if (dimension == 2) {
         int i, j;
         j = index % m_length + 1;
@@ -1347,38 +1349,38 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 save_solution_properties(const Solution_Properties& sp, const char* filename)
 {
-    std::ofstream out(filename);
+    ofstream out(filename);
     //----- header
     out << "Strassen solution for ";
     for (int i = 0; i < dimension-1; ++i) {
         out << length << "×";
     }
-    out << length << " cube product with " << f_count << " multiplications." << std::endl << std::endl;
+    out << length << " cube product with " << f_count << " multiplications." << endl << endl;
     //----- multiplication vectors numbers
     out << "Multiplication numbers: [ ";
     for (auto i: sp.multiplication_vectors) {
         out << i << " ";
     }
-    out << "]" << std::endl;
+    out << "]" << endl;
     //----- multiplications
     int c = 1;
     int m_summations = 0;
     for (auto i = sp.multiplication_vectors.begin(); i != sp.multiplication_vectors.end(); ++i, ++c) {
         out << "M" << c << " = ";
-        std::vector<int> ops = sum_operations_cube(*i);
-        m_summations += std::accumulate(ops.begin(), ops.end(), -ops.size());
-        std::vector<std::string> sm, smc;
-        std::set<std::string> sa, sb, sc;
+        vector<int> ops = sum_operations_cube(*i);
+        m_summations += accumulate(ops.begin(), ops.end(), -ops.size());
+        vector<string> sm, smc;
+        set<string> sa, sb, sc;
         Multiplication_Vector& mv = m_vectors[*i].v;
         if (dimension == 2) {
             for (size_t j = 0; j < mv.size(); ++j) {
                 if (mv[j]) {
                     int ai, aj, bi, bj;
                     decode_indices_from_index(j, ai, aj, bi, bj);
-                    sm.push_back("A" + std::to_string(ai+1) + std::to_string(aj+1) +
-                                 "B" + std::to_string(bi+1) + std::to_string(bj+1));
-                    sa.insert("A" + std::to_string(ai+1) + std::to_string(aj+1));
-                    sb.insert("B" + std::to_string(bi+1) + std::to_string(bj+1));
+                    sm.push_back("A" + to_string(ai+1) + to_string(aj+1) +
+                                 "B" + to_string(bi+1) + to_string(bj+1));
+                    sa.insert("A" + to_string(ai+1) + to_string(aj+1));
+                    sb.insert("B" + to_string(bi+1) + to_string(bj+1));
                 }
             }
             out << "(" << boost::algorithm::join(sa, " + ") + ")×";
@@ -1387,12 +1389,12 @@ save_solution_properties(const Solution_Properties& sp, const char* filename)
             // TODO
         }
         out << " = ";
-        out << boost::algorithm::join(sm, " + ") << std::endl;
+        out << boost::algorithm::join(sm, " + ") << endl;
     }
     //----- result elements
     int r_summations = 0;
     for (int i = 0; i < element_count; ++i) {
-        std::vector<std::string> sr;
+        vector<string> sr;
         boost::dynamic_bitset<> x = sp.coefficients[i];
         r_summations += x.count() - 1;
         if (dimension == 2) {
@@ -1402,15 +1404,15 @@ save_solution_properties(const Solution_Properties& sp, const char* filename)
         }
         for (boost::dynamic_bitset<>::size_type j = 0; j < x.size(); ++j) {
             if (x.test(j)) {
-                sr.push_back("M" + std::to_string(j+1));
+                sr.push_back("M" + to_string(j+1));
             }
         }
-        out << boost::algorithm::join(sr, " + ") << std::endl;
+        out << boost::algorithm::join(sr, " + ") << endl;
     }
     //----- summation count
-    out << "Summation count for multiplications = " << m_summations << std::endl;
-    out << "Summation count for result elements = " << r_summations << std::endl;
-    out << "Total number of summations used = " << sp.operation_count << std::endl;
+    out << "Summation count for multiplications = " << m_summations << endl;
+    out << "Summation count for result elements = " << r_summations << endl;
+    out << "Total number of summations used = " << sp.operation_count << endl;
     //----- end
     out.close();
 }

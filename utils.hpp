@@ -24,13 +24,15 @@
 #include <bitset>
 #include <chrono>
 
+using namespace std;
+
 //=============================================================================
 
 /**
  * Type alias for bitset.
  */
 template <size_t N>
-using mm_bitset = std::bitset<N>;
+using mm_bitset = bitset<N>;
 
 //=============================================================================
 
@@ -57,8 +59,8 @@ public:
  */
 class Random {
 public:
-    std::mt19937 generator;
-    std::uniform_int_distribution<int>* distribution;
+    mt19937 generator;
+    uniform_int_distribution<int>* distribution;
     Random();
     ~Random();
     void init(int i, int s); /// Init with interval [i,s].
@@ -76,7 +78,7 @@ public:
 class mm_vector_with_properties_options
 {
 public:
-    std::vector<std::set<int>> rnd_sets; /// Sets of the bit indices.
+    vector<set<int>> rnd_sets; /// Sets of the bit indices.
 };
 
 /**
@@ -147,9 +149,9 @@ Timewatch::watch()
 //=============================================================================
 
 Random::Random() :
-    generator(std::chrono::system_clock::now().time_since_epoch().count())
+    generator(chrono::system_clock::now().time_since_epoch().count())
 {
-    distribution = new std::uniform_int_distribution<int>(0, 1);
+    distribution = new uniform_int_distribution<int>(0, 1);
 }
 
 Random::~Random()
@@ -168,7 +170,7 @@ Random::
 init(int i, int s)
 {
     delete distribution;
-    distribution = new std::uniform_int_distribution<int>(i, s);
+    distribution = new uniform_int_distribution<int>(i, s);
 }
 
 /**
@@ -198,7 +200,7 @@ calculate_properties(mm_vector_with_properties_options& o)
     bit_count = v.count();
     for (int i = 0; i < rnd_size; ++i) {
         r.set(i,false);
-        for (std::set<int>::iterator j = o.rnd_sets[i].begin(); j != o.rnd_sets[i].end(); ++j) {
+        for (set<int>::iterator j = o.rnd_sets[i].begin(); j != o.rnd_sets[i].end(); ++j) {
             r[i] = r[i] != v[*j];
         }
     }
@@ -217,7 +219,7 @@ make_options(mm_vector_with_properties_options& o)
     Random g;
     g.init(0, N-1);
     for (int i = 0; i < rnd_size; ++i) {
-        std::set<int> c;
+        set<int> c;
         for (int j = 0; j < rnd_count; ++j) {
             int n = g.next();
             while (c.find(n) != c.end()) {
@@ -300,7 +302,7 @@ power(int a, int b)
  */
 int popcount(int x)
 {
-    std::bitset<16> b(x);
+    bitset<16> b(x);
     return b.count();
 }
 
