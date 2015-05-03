@@ -468,7 +468,7 @@ gauss_wp_presolve(const std::vector<mm_vector_with_properties<N>>& a, Gauss_WP_P
         }
         if (k == N) { // linearly dependent
             i = p.am.erase(i);
-            continue;
+            return false;
         } else { // make 0's all items in a row k except for i'th column
             for (typename std::vector<mm_vector_with_properties<N>>::iterator j = p.am.begin(); j != i; ++j) {
                 if ((*j).v[k]) {

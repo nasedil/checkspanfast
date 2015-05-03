@@ -71,6 +71,7 @@ public:
     int checked_sets_count; /// number of sets checked
     int raw_solution_count; /// number of found solutions, including duplicates
     int best_result; /// maximum number of vectors in the span found
+    int lin_dependent_sets;
     Timewatch tw; /// timer that is used for getting calculation time
     Random rnd; /// random number generator
 
@@ -711,6 +712,7 @@ clear_statistics()
     checked_sets_count = 0;
     iteration_count = 0;
     best_result = 0;
+    lin_dependent_sets = 0;
 #ifdef OUTPUT_STATISTICS
     raw_solution_count = 0;
     solutions.clear();
@@ -759,6 +761,7 @@ check_vectors_for_goodness()
     std::cout << "} has started..." << std::endl;
     tw.watch();
 #endif // VERY_DETAILED_OUTPUT
+    ++checked_sets_count;
     std::vector<mm_vector_with_properties<NM>> nvwp; /// set of span vectors for SLAE
     std::vector<mm_vector_with_properties<NM>> gvwp; /// set of good vectors for SLAE
     Vectors_Presolve_Data<NM> v; /// vector presolve data for span vectors
@@ -773,7 +776,10 @@ check_vectors_for_goodness()
         nvwp.push_back(r_vectors[i]);
         v.add_vector(r_vectors[i].v);
     }
-    gauss_wp_presolve(nvwp, pwp);
+    if (!gauss_wp_presolve(nvwp, pwp)) { // vectors are linearly dependent
+        ++lin_dependent_sets;
+        return false;
+    }
     gauss_wp_presolve(gvwp, pwpg);
 
     for (int i = 0; i < m_count; ++i) {
@@ -792,7 +798,6 @@ check_vectors_for_goodness()
 #ifdef VERY_DETAILED_OUTPUT
     std::cout << "  [" << tw.watch() << " s] Done." << std::endl;
 #endif // VERY_DETAILED_OUTPUT
-    ++checked_sets_count;
     best_result = good_vectors_indexes.size();
     if (good_vectors_indexes.size() >= f_count) { // there is a solution
 #ifdef VERBOSE_OUTPUT

@@ -8,9 +8,9 @@
  * @version pre-alpha
  */
 
-#define VERBOSE_OUTPUT /// output verbose information
-#define VERY_DETAILED_OUTPUT /// output even more information
-#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
+//#define VERBOSE_OUTPUT /// output verbose information
+//#define VERY_DETAILED_OUTPUT /// output even more information
+//#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
 
 #include <iostream>
@@ -210,20 +210,24 @@ void test(int n, int d, int t, int limit)
     Timewatch tw;
     int times = t;
     int checked_sets_count;
+    int lin_dependent_sets;
     int iteration_count;
     int restarts;
     std::cout << "Start testing different search algorithms..." << std::endl;
     //----- test full space
-    //tw.watch();
-    //checker->check_for_good_vectors();
-    //std::cout << "Full search: " << tw.watch() << " s / "
-    //          << checker->checked_sets_count << " checked sets" << std::endl;
+    tw.watch();
+    checker->check_for_good_vectors();
+    std::cout << "Full search: " << tw.watch() << " s / "
+              << checker->checked_sets_count << " checked sets" << std::endl;
+    std::cout << "    " << checker->lin_dependent_sets << " linearly dependent sets" << std::endl;
     //----- test random search
     tw.watch();
     checked_sets_count = 0;
+    lin_dependent_sets = 0;
     for (int i = 0; i < times; ++i) {
         checker->check_for_good_vectors_randomized();
         checked_sets_count += checker->checked_sets_count;
+        lin_dependent_sets += checker->lin_dependent_sets;
 #ifdef OUTPUT_STATISTICS
         if (!checker->check_solution(checker->good_vectors_indexes, sp)) {
             std::cout << "Found solution is not correct!!!" << std::endl;
@@ -237,14 +241,17 @@ void test(int n, int d, int t, int limit)
     }
     std::cout << "Random search: " << tw.watch()/times << " s / "
               << 1.0*checked_sets_count/times << " checked sets" << std::endl;
+    std::cout << "    " << 1.0*lin_dependent_sets/times << " linearly dependent sets" << std::endl;
     //----- test hill climbing
     tw.watch();
     checked_sets_count = 0;
+    lin_dependent_sets = 0;
     iteration_count = 0;
     restarts = 0;
     for (int i = 0; i < times; ++i) {
         checker->solve_hill_climbing(limit);
         checked_sets_count += checker->checked_sets_count;
+        lin_dependent_sets += checker->lin_dependent_sets;
         restarts += checker->restarts;
         iteration_count += checker->iteration_count;
 #ifdef OUTPUT_STATISTICS
@@ -262,6 +269,7 @@ void test(int n, int d, int t, int limit)
               << 1.0*checked_sets_count/times << " checked sets / "
               << 1.0*restarts/times << " restarts / "
               << 1.0*iteration_count/times << " iterations" << std::endl;
+    std::cout << "    " << 1.0*lin_dependent_sets/times << " linearly dependent sets" << std::endl;
     //----- end
     std::cout << "Testing finished." << std::endl;
     delete checker;
