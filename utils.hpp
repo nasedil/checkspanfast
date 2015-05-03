@@ -46,10 +46,9 @@ int popcount(int x); /// Return number of set bits in a number.
  */
 class Timewatch {
 public:
-    clock_t timestamp; /// Timestamp of the last call.
-    float thread_count; /// number of active threads
+    double timestamp; /// Timestamp of the last call.
     Timewatch();
-    float watch(); /// Get interval duration since last call.
+    double watch(); /// Get interval duration since last call.
 };
 
 //=============================================================================
@@ -129,8 +128,7 @@ public:
  */
 Timewatch::Timewatch()
 {
-    timestamp = clock();
-    thread_count = 1.0;
+    timestamp = omp_get_wtime();
 }
 
 /**
@@ -138,12 +136,12 @@ Timewatch::Timewatch()
  *
  * @return interval duration in seconds.
  */
-float
+double
 Timewatch::watch()
 {
-    float elapsed_secs = float(clock() - timestamp) / CLOCKS_PER_SEC;
-    timestamp = clock();
-    return elapsed_secs/thread_count;
+    double elapsed_secs = double(omp_get_wtime() - timestamp);
+    timestamp = omp_get_wtime();
+    return elapsed_secs;
 }
 
 //=============================================================================

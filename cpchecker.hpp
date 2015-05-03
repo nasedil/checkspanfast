@@ -76,6 +76,7 @@ public:
     int lin_dependent_sets;
     Timewatch tw; /// timer that is used for getting calculation time
     Random rnd; /// random number generator
+    int thread_number; /// thread number
     map<Candidate, int> candidate_cache; /// cache of already checked candidates
     int cache_limit; /// limit of the cache size
     int cache_hits; /// cache hits
@@ -808,7 +809,7 @@ Cube_Product_Checker<N, D, NM, NMH>::
 check_vectors_for_goodness()
 {
 #ifdef VERY_DETAILED_OUTPUT
-    cout << "[" << omp_get_thread_num() << "]";
+    cout << "<" << thread_number << "> ";
     cout << "Checking of vectors { ";
     for (int i: n_vectors_indexes) {
         cout << i << " ";
@@ -970,9 +971,13 @@ check_for_good_vectors_randomized()
 {
     clear_statistics();
     while (true) {
-        make_random_candidate();
-        if (check_vectors_for_goodness())
-            return true;
+        //make_random_candidate();
+        cout << "I am random searcher" << endl;
+        for (int i = 0; i < 1000000000; ++i) {
+            thread_number += thread_number / 2;
+        }
+        //if (check_vectors_for_goodness())
+         //   return true;
     }
     return false;
 }
@@ -1085,6 +1090,7 @@ solve_hill_climbing(int local_max_limit)
         for (const Candidate& c: neighbours) {
             n_vectors_indexes = c;
             good_vectors_indexes.clear();
+            cout << "I am hill climber" << endl;
             check_vectors_for_goodness();
             if (best_result > next_best_result) {
                 next_best_result = best_result;

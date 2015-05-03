@@ -9,8 +9,8 @@
  */
 
 #define VERBOSE_OUTPUT /// output verbose information
-//#define VERY_DETAILED_OUTPUT /// output even more information
-//#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
+#define VERY_DETAILED_OUTPUT /// output even more information
+#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
 #define USE_CACHE
 
@@ -164,7 +164,6 @@ void parallel_3x3(int limit)
         //    checker->init(master_checker);
         checker->init(23, "");
         //}
-        checker->tw.thread_count = thread_count;
         if (checker->solve_hill_climbing(limit)) {
             cout << "Found after " << checker->restarts << " restarts and " << checker->checked_sets_count << " checks.";
         }
@@ -175,26 +174,23 @@ void parallel_3x3(int limit)
 void parallel_2x2x2(int limit)
 {
     Cube_Product_Checker<2, 3, 512, 8>* master_checker = new Cube_Product_Checker<2, 3, 512, 8>;
-    master_checker->init(15, "mvectors.dat");
+    master_checker->init(15, "");
     //master_checker->write_m_vectors("mvectors.dat");
-
-    if (master_checker->solve_hill_climbing(limit)) {
-        cout << "Found after " << master_checker->restarts << " restarts and " << master_checker->checked_sets_count << " checks.";
-    }
-    delete master_checker;
-    return;
 
     #pragma omp parallel
     {
-        int thread_count = omp_get_num_threads();
+        int thread_number = omp_get_thread_num();
         Cube_Product_Checker<2, 3, 512, 8>* checker;
-        if (omp_get_thread_num() == 0) {
+        if (thread_number == 0) {
             checker = master_checker;
+            checker->thread_number = thread_number;
+            checker->solve_hill_climbing(limit);
         } else {
             checker = new Cube_Product_Checker<2, 3, 512, 8>;
             checker->init(*master_checker);
+            checker->thread_number = thread_number;
+            checker->check_for_good_vectors_randomized();
         }
-        checker->tw.thread_count = thread_count;
         if (checker->check_for_good_vectors_randomized()) {
             cout << "Found after " << checker->iteration_count << " iterations.";
         }
