@@ -9,7 +9,7 @@
  */
 
 #define VERBOSE_OUTPUT /// output verbose information
-//#define VERY_DETAILED_OUTPUT /// output even more information
+#define VERY_DETAILED_OUTPUT /// output even more information
 #define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
 
@@ -29,7 +29,7 @@ void test(int n, int d, int t, int limit);  /// test different algorithms and wr
 void parallel(int p, int n, int d, int limit); /// find solutions in parallel
 void parallel_2x2();
 void parallel_3x3(int limit);
-void parallel_2x2x2();
+void parallel_2x2x2(int limit);
 
 //=============================================================================
 
@@ -124,7 +124,7 @@ void parallel(int p, int n, int d, int limit)
         }
     } else if (d == 3) {
         if (n == 2) {
-            parallel_2x2x2();
+            parallel_2x2x2(limit);
         }
     }
 }
@@ -169,10 +169,17 @@ void parallel_3x3(int limit)
     }
 }
 
-void parallel_2x2x2()
+void parallel_2x2x2(int limit)
 {
     Cube_Product_Checker<2, 3, 512, 8>* master_checker = new Cube_Product_Checker<2, 3, 512, 8>;
     master_checker->init(15);
+
+    if (master_checker->solve_hill_climbing(limit)) {
+        std::cout << "Found after " << master_checker->restarts << " restarts and " << master_checker->checked_sets_count << " checks.";
+    }
+    delete master_checker;
+    return;
+
     #pragma omp parallel
     {
         int thread_count = omp_get_num_threads();
