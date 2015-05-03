@@ -183,14 +183,11 @@ void parallel_2x2x2(int limit)
         Cube_Product_Checker<2, 3, 512, 8>* checker;
         if (thread_number == 0) {
             checker = master_checker;
-            checker->thread_number = thread_number;
-            checker->solve_hill_climbing(limit);
         } else {
             checker = new Cube_Product_Checker<2, 3, 512, 8>;
             checker->init(*master_checker);
-            checker->thread_number = thread_number;
-            checker->check_for_good_vectors_randomized();
         }
+        checker->thread_number = thread_number;
         if (checker->check_for_good_vectors_randomized()) {
             cout << "Found after " << checker->iteration_count << " iterations.";
         }

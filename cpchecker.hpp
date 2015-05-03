@@ -168,6 +168,9 @@ Cube_Product_Checker() :
     f_count = power(length,dimension+1)-1;
     m_length = power(2,element_count)-1;
     m_count = power(m_length,dimension);
+    cache_limit = 3000000;
+    cache_hits = 0;
+    rnd.init(0, m_count-1);
 #ifdef VERBOSE_OUTPUT
     cout << "Cube Product Checker has been created." << endl;
 #endif // VERBOSE_OUTPUT
@@ -200,9 +203,6 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 init(int mult_count, const string& filename)
 {
-    cache_limit = 3000000;
-    cache_hits = 0;
-    rnd.init(0, m_count-1);
     f_count = mult_count;
     r_vectors = new mm_vector_with_properties<NM>[element_count];
     m_vectors = new mm_vector_with_properties<NM>[m_count];
@@ -243,6 +243,7 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 init(const Cube_Product_Checker& cpc)
 {
+    f_count = cpc.f_count;
     r_vectors = cpc.r_vectors;
     m_vectors = cpc.m_vectors;
     vector_options = cpc.vector_options;
@@ -971,13 +972,10 @@ check_for_good_vectors_randomized()
 {
     clear_statistics();
     while (true) {
-        //make_random_candidate();
-        cout << "I am random searcher" << endl;
-        for (int i = 0; i < 1000000000; ++i) {
-            thread_number += thread_number / 2;
-        }
-        //if (check_vectors_for_goodness())
-         //   return true;
+        make_random_candidate();
+        cout << "I am random searcher " << thread_number << endl;
+        if (check_vectors_for_goodness())
+            return true;
     }
     return false;
 }
