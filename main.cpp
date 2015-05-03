@@ -8,7 +8,7 @@
  * @version pre-alpha
  */
 
-//#define VERBOSE_OUTPUT /// output verbose information
+#define VERBOSE_OUTPUT /// output verbose information
 //#define VERY_DETAILED_OUTPUT /// output even more information
 //#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
@@ -81,7 +81,7 @@ int main(int argc ,char** argv)
 void temp()
 {
     Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
-    checker->init(7);
+    checker->init(7, "");
     checker->check_for_good_vectors();
     checker->save_results("./solutions-2x2.txt");
     bool all_right = true;
@@ -139,7 +139,7 @@ void parallel_2x2()
     #pragma omp parallel
     {
         Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
-        checker->init(7);
+        checker->init(7, "");
         if (checker->check_for_good_vectors_randomized()) {
             cout << "Found after " << checker->iteration_count << " iterations.";
         }
@@ -162,7 +162,7 @@ void parallel_3x3(int limit)
         //} else {
             checker = new Cube_Product_Checker<3, 2, 81, 9>;
         //    checker->init(master_checker);
-        checker->init(23);
+        checker->init(23, "");
         //}
         checker->tw.thread_count = thread_count;
         if (checker->solve_hill_climbing(limit)) {
@@ -175,7 +175,8 @@ void parallel_3x3(int limit)
 void parallel_2x2x2(int limit)
 {
     Cube_Product_Checker<2, 3, 512, 8>* master_checker = new Cube_Product_Checker<2, 3, 512, 8>;
-    master_checker->init(15);
+    master_checker->init(15, "mvectors.dat");
+    //master_checker->write_m_vectors("mvectors.dat");
 
     if (master_checker->solve_hill_climbing(limit)) {
         cout << "Found after " << master_checker->restarts << " restarts and " << master_checker->checked_sets_count << " checks.";
@@ -208,7 +209,7 @@ void test(int n, int d, int t, int limit)
         return;
     }
     Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
-    checker->init(7);
+    checker->init(7, "");
     Solution_Properties sp;
     Timewatch tw;
     int times = t;
@@ -219,7 +220,7 @@ void test(int n, int d, int t, int limit)
     cout << "Start testing different search algorithms..." << endl;
     //----- test full space
     tw.watch();
-    //checker->check_for_good_vectors();
+    checker->check_for_good_vectors();
     cout << "Full search: " << tw.watch() << " s / "
               << checker->checked_sets_count << " checked sets" << endl;
     cout << "    " << checker->lin_dependent_sets << " linearly dependent sets" << endl;

@@ -103,7 +103,7 @@ public:
     vector<int> decode_m_index(int index) const; /// return the coefficients from m-vector index
 
     //=============--- Initial calculations
-    void init(int mult_count); /// calculate all properties
+    void init(int mult_count, const string& filename); /// calculate all properties
     void init(const Cube_Product_Checker& cpc); /// Link to all properties in other object.
     void calculate_r_vectors(); /// write result vectors to array
     void calculate_m_vectors(); /// write multiplication vectors to array
@@ -129,6 +129,8 @@ public:
     void save_random_samples(int size, const char* filename) const; /// save random sets to a file (for testing later)
     void read_samples_and_check(const char* filename, const char* filenameout) const; /// check sets from a file
     void output_current_state() const; // output current state of the checker
+    void read_m_vectors(const string& filename); /// read m_vectors from file
+    void write_m_vectors(const string& filename); /// write m_vectors into file
 
     //=============--- Statistics and results
     void save_results(const char* filename); /// save results to a file
@@ -195,7 +197,7 @@ Cube_Product_Checker<N, D, NM, NMH>::
 template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
-init(int mult_count)
+init(int mult_count, const string& filename)
 {
     cache_limit = 3000000;
     cache_hits = 0;
@@ -215,9 +217,13 @@ init(int mult_count)
 #ifdef VERBOSE_OUTPUT
     cout << "[" << tw.watch() << " s] Result vectors calculated." << endl;
 #endif // VERBOSE_OUTPUT
-    calculate_m_vectors();
-    for (int i = 0; i < m_count; ++i) {
-        m_vectors[i].calculate_properties(vector_options);
+    if (filename.length() > 0) {
+        read_m_vectors(filename);
+    } else {
+        calculate_m_vectors();
+        for (int i = 0; i < m_count; ++i) {
+            m_vectors[i].calculate_properties(vector_options);
+        }
     }
 #ifdef VERBOSE_OUTPUT
     cout << "[" << tw.watch() << " s] Multiplication vectors calculated." << endl;
@@ -1132,6 +1138,44 @@ output_current_state() const
     cout << lin_dependent_sets << " linearly dependent sets hits" << endl;
     cout << cache_hits << " cache hits" << endl;
     cout << "=================" << endl;
+}
+
+//=============================================================================
+
+/**
+ * Write m_vectors into file.
+ *
+ * @param filename: filename.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+write_m_vectors(const string& filename)
+{
+    ofstream fout(filename);
+    for (int i = 0; i < m_count; ++i) {
+        fout << m_vectors[i].v.to_string() << m_vectors[i].r.to_string();
+    }
+    fout.close();
+}
+
+//=============================================================================
+
+/**
+ * Read m_vectors from file.
+ *
+ * @param filename: filename.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+read_m_vectors(const string& filename)
+{
+    ifstream fin(filename);
+    for (int i = 0; i < m_count; ++i) {
+        fin >> m_vectors[i].v >> m_vectors[i].r;
+    }
+    fin.close();
 }
 
 //=============================================================================

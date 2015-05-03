@@ -94,8 +94,8 @@ class mm_vector_with_properties {
 public:
     mm_bitset<N> v; /// Main bitset.
     int bit_count;  /// Size of the bitset.
-    static const int rnd_size = 128; /// Number of terms for linear combination.
-    static const int rnd_count = 4; /// Number of additional bits.
+    static const int rnd_size = 0; /// Number of terms for linear combination.
+    static const int rnd_count = 0; /// Number of additional bits.
     mm_bitset<rnd_size> r; /// Additional bits.
     void calculate_properties(mm_vector_with_properties_options& o); /// Calculate additional bits.
     static void make_options(mm_vector_with_properties_options& o); /// Make options randomly.
