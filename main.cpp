@@ -12,6 +12,7 @@
 //#define VERY_DETAILED_OUTPUT /// output even more information
 //#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
+#define USE_CACHE
 
 #include <iostream>
 #include <string>
@@ -220,6 +221,9 @@ void test(int n, int d, int t, int limit)
     std::cout << "Full search: " << tw.watch() << " s / "
               << checker->checked_sets_count << " checked sets" << std::endl;
     std::cout << "    " << checker->lin_dependent_sets << " linearly dependent sets" << std::endl;
+#ifdef USE_CACHE
+    std::cout << "    " << checker->cache_hits << " cache hits" << std::endl;
+#endif // USE_CACHE
     //----- test random search
     tw.watch();
     checked_sets_count = 0;
@@ -242,6 +246,9 @@ void test(int n, int d, int t, int limit)
     std::cout << "Random search: " << tw.watch()/times << " s / "
               << 1.0*checked_sets_count/times << " checked sets" << std::endl;
     std::cout << "    " << 1.0*lin_dependent_sets/times << " linearly dependent sets" << std::endl;
+#ifdef USE_CACHE
+    std::cout << "    " << checker->cache_hits << " cache hits" << std::endl;
+#endif // USE_CACHE
     //----- test hill climbing
     tw.watch();
     checked_sets_count = 0;
@@ -270,6 +277,9 @@ void test(int n, int d, int t, int limit)
               << 1.0*restarts/times << " restarts / "
               << 1.0*iteration_count/times << " iterations" << std::endl;
     std::cout << "    " << 1.0*lin_dependent_sets/times << " linearly dependent sets" << std::endl;
+#ifdef USE_CACHE
+    std::cout << "    " << checker->cache_hits << " cache hits" << std::endl;
+#endif // USE_CACHE
     //----- end
     std::cout << "Testing finished." << std::endl;
     delete checker;

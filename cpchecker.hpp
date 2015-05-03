@@ -74,6 +74,9 @@ public:
     int lin_dependent_sets;
     Timewatch tw; /// timer that is used for getting calculation time
     Random rnd; /// random number generator
+    std::map<Candidate, int> candidate_cache; /// cache of already checked candidates
+    int cache_limit; /// limit of the cache size
+    int cache_hits; /// cache hits
 
     //=============--- constructors and destructors
     Cube_Product_Checker();
@@ -109,6 +112,8 @@ public:
     bool check_vectors_for_goodness(); /// check current set of vectors
     void clear_statistics(); /// clear statistics of solutions
     void make_random_candidate(); /// make random candidate solution
+    bool check_cache(); /// check if candidate result is in cache
+    void update_cache(); /// update the cache with new result
 
     //=============--- searching for solution
     bool check_for_good_vectors(); /// check all solution space
@@ -189,6 +194,8 @@ void
 Cube_Product_Checker<N, D, NM, NMH>::
 init(int mult_count)
 {
+    cache_limit = 3000000;
+    cache_hits = 0;
     rnd.init(0, m_count-1);
     f_count = mult_count;
     r_vectors = new mm_vector_with_properties<NM>[element_count];
@@ -743,6 +750,45 @@ make_random_candidate()
 //=============================================================================
 
 /**
+ * If current candidate is in cache, than get info from cache.
+ *
+ * @return true if the current candidate is in cache.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+bool
+Cube_Product_Checker<N, D, NM, NMH>::
+check_cache()
+{
+    std::map<Candidate, int>::const_iterator it;
+    if ((it = candidate_cache.find(n_vectors_indexes)) != candidate_cache.end()) {
+        best_result = it->second;
+        ++cache_hits;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+//=============================================================================
+
+/**
+ * Update the cache with new result.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+update_cache()
+{
+    if (candidate_cache.size() >= cache_limit) {
+        candidate_cache.clear();
+        //std::cout << "------------->> Cache cleared" << std::endl;
+    }
+    candidate_cache[n_vectors_indexes] = best_result;
+}
+
+//=============================================================================
+
+/**
  * Check the current set for being a solution.
  *
  * @return true if the current set is a solution.
@@ -762,6 +808,15 @@ check_vectors_for_goodness()
     tw.watch();
 #endif // VERY_DETAILED_OUTPUT
     ++checked_sets_count;
+#ifdef USE_CACHE
+    if (check_cache()) {
+        if (best_result == f_count) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+#endif // USE_CACHE
     std::vector<mm_vector_with_properties<NM>> nvwp; /// set of span vectors for SLAE
     std::vector<mm_vector_with_properties<NM>> gvwp; /// set of good vectors for SLAE
     Vectors_Presolve_Data<NM> v; /// vector presolve data for span vectors
@@ -778,6 +833,9 @@ check_vectors_for_goodness()
     }
     if (!gauss_wp_presolve(nvwp, pwp)) { // vectors are linearly dependent
         ++lin_dependent_sets;
+#ifdef USE_CACHE
+        update_cache();
+#endif // USE_CACHE
         return false;
     }
     gauss_wp_presolve(gvwp, pwpg);
@@ -799,6 +857,9 @@ check_vectors_for_goodness()
     std::cout << "  [" << tw.watch() << " s] Done." << std::endl;
 #endif // VERY_DETAILED_OUTPUT
     best_result = good_vectors_indexes.size();
+#ifdef USE_CACHE
+        update_cache();
+#endif // USE_CACHE
     if (good_vectors_indexes.size() >= f_count) { // there is a solution
 #ifdef VERBOSE_OUTPUT
         std::cout << "  Good vectors have been found: { ";
@@ -935,7 +996,7 @@ start_neighbourhood()
             value = value*m_length + cur_coef[o].to_ulong()-1;
         }
         if (value != i) {
-            std::cout << "Fukken shit! " << value << std::endl;
+            std::cout << "Hardcore error here! " << value << std::endl;
         }
 #endif // OUTPUT_STATISTICS
         for (int j = 0; j < dimension; ++j) {
