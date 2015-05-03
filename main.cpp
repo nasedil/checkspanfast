@@ -219,7 +219,7 @@ void test(int n, int d, int t, int limit)
     cout << "Start testing different search algorithms..." << endl;
     //----- test full space
     tw.watch();
-    checker->check_for_good_vectors();
+    //checker->check_for_good_vectors();
     cout << "Full search: " << tw.watch() << " s / "
               << checker->checked_sets_count << " checked sets" << endl;
     cout << "    " << checker->lin_dependent_sets << " linearly dependent sets" << endl;

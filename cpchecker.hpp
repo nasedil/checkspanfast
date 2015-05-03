@@ -128,6 +128,7 @@ public:
     void output_vector_text(Multiplication_Vector v) const; /// output vector to screen in letters
     void save_random_samples(int size, const char* filename) const; /// save random sets to a file (for testing later)
     void read_samples_and_check(const char* filename, const char* filenameout) const; /// check sets from a file
+    void output_current_state() const; // output current state of the checker
 
     //=============--- Statistics and results
     void save_results(const char* filename); /// save results to a file
@@ -1097,6 +1098,9 @@ solve_hill_climbing(int local_max_limit)
         }
         ++iteration_count;
         ++local_iterations;
+#ifdef VERBOSE_OUTPUT
+        output_current_state();
+#endif // VERBOSE_OUTPUT
         //cout << "Iteration " << iteration_count << ": best is " << best_result << endl;
     }
     good_vectors_indexes.clear();
@@ -1107,6 +1111,27 @@ solve_hill_climbing(int local_max_limit)
         cout << "Error!" << endl;
         return false;
     }
+}
+
+//=============================================================================
+
+/**
+ * Output current state variables of the checker.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+output_current_state() const
+{
+    cout << endl;
+    cout << "=================" << endl;
+    cout << "Current state is:" << endl;
+    cout << checked_sets_count << " checked sets" << endl;
+    cout << restarts << " restarts" << endl;
+    cout << iteration_count << " iterations" << endl;
+    cout << lin_dependent_sets << " linearly dependent sets hits" << endl;
+    cout << cache_hits << " cache hits" << endl;
+    cout << "=================" << endl;
 }
 
 //=============================================================================
