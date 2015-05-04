@@ -92,10 +92,11 @@ template <size_t N>
 class mm_vector_with_properties {
 public:
     mm_bitset<N> v; /// Main bitset.
-    int bit_count;  /// Size of the bitset.
+    int v_count; /// number of set bits in v
     static const int rnd_size = 0; /// Number of terms for linear combination.
     static const int rnd_count = 0; /// Number of additional bits.
     mm_bitset<rnd_size> r; /// Additional bits.
+    int r_count; /// number of set bits in r
     void calculate_properties(mm_vector_with_properties_options& o); /// Calculate additional bits.
     static void make_options(mm_vector_with_properties_options& o); /// Make options randomly.
 };
@@ -196,13 +197,14 @@ void
 mm_vector_with_properties<N>::
 calculate_properties(mm_vector_with_properties_options& o)
 {
-    bit_count = v.count();
+    v_count = v.count();
     for (int i = 0; i < rnd_size; ++i) {
         r.set(i,false);
         for (set<int>::iterator j = o.rnd_sets[i].begin(); j != o.rnd_sets[i].end(); ++j) {
             r[i] = r[i] != v[*j];
         }
     }
+    r_count = r.count();
 }
 
 /**

@@ -225,6 +225,7 @@ void test(int n, int d, int t, int limit)
     cout << "    " << checker->lin_dependent_sets << " linearly dependent sets" << endl;
     cout << "    " << checker->bit_check_hits << " bit check hits" << endl;
     cout << "    " << checker->gaussian_eliminations << " gaussian eliminations" << endl;
+    //cout << "    " << test_bit_gauss_check_hits << " gaussian bit count hits" << endl;
 #ifdef USE_CACHE
     cout << "    " << checker->cache_hits << " cache hits" << endl;
 #endif // USE_CACHE

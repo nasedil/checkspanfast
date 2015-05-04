@@ -514,10 +514,15 @@ gauss_wp_solve(const Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properti
         }
         ++j;
     }
-    for (int i = 0; i < c.r.size(); ++i) {
-        if (c.r[i] != b.r[i])
-            return false;
+    // first check number of ones
+    /*
+    if (c.r.count() != b.r_count) {
+        return false;
     }
+    */
+    // then every bit
+    if (c.r != b.r)
+        return false;
     c.v.reset();
     j = p.am.begin();
     for (vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
@@ -526,10 +531,15 @@ gauss_wp_solve(const Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properti
         }
         ++j;
     }
-    for (int i = 0; i < c.v.size(); ++i) {
-        if (c.v[i] != b.v[i])
-            return false;
+    // first check number of ones
+    /*
+    if (c.v.count() != b.v_count) {
+        return false;
     }
+    */
+    // then every bit
+    if (c.v != b.v)
+        return false;
     return true;
 }
 
