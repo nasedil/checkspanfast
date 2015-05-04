@@ -50,6 +50,8 @@ template <size_t N>
 bool gauss_wp_solve(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b);
 template <size_t N>
 bool gauss_wp_solve_cached(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b);
+template <size_t N>
+bool gauss_wp_solve_fast_cached(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b);
 
 //=============================================================================
 
@@ -451,7 +453,36 @@ public:
     vector<mm_vector_with_properties<N>> am; /// Transformed Matrix.
     vector<int> imi;
     map<int, mm_vector_with_properties<N>> cache; /// cache with sums of vectors
+    mm_vector_with_properties<N>* memo_array; /// cache with sums of vectors
+    bool* memo_status; /// cache status
+
+    Gauss_WP_Presolve_Data(int f_count);
+    ~Gauss_WP_Presolve_Data();
 };
+
+/**
+ * Constructor.
+ *
+ * @param f_count:  number of vectors in matrix.
+ */
+template <size_t N>
+Gauss_WP_Presolve_Data<N>::
+Gauss_WP_Presolve_Data(int f_count)
+{
+    memo_array = new mm_vector_with_properties<N>[power(2, f_count)];
+    memo_status = new bool[power(2, f_count)];
+}
+
+/**
+ * Destructor.
+ */
+template <size_t N>
+Gauss_WP_Presolve_Data<N>::
+~Gauss_WP_Presolve_Data()
+{
+    delete [] memo_array;
+    delete [] memo_status;
+}
 
 /**
  * Collect operoationsdata for Gaussian elimination variant for solving SLAE.
@@ -582,6 +613,42 @@ gauss_wp_solve_cached(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_propert
         return false;
     }
     */
+}
+
+/**
+ * Sovle SLAE by Gaussian elimination using precomputed data using memoization.
+ *
+ * @param N: size of result and variable vectors.
+ *
+ * @param p: the presolve data;
+ * @param b: the resulting vector;
+ *
+ * @return if there is a solution.
+ */
+template <size_t N>
+bool
+gauss_wp_solve_fast_cached(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b)
+{
+    int matrix_multiplier = 0;
+    for (vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
+        matrix_multiplier <<= 1;
+        matrix_multiplier += b.v[*i];
+    }
+    if (p.memo_status[matrix_multiplier]) {
+        return (p.memo_array[matrix_multiplier].v == b.v);
+    } else {
+        mm_vector_with_properties<N> c;
+        typename vector<mm_vector_with_properties<N>>::const_iterator j = p.am.begin();
+        for (vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
+            if (b.v[*i]) {
+                c.v ^= (*j).v;
+            }
+            ++j;
+        }
+        p.memo_array[matrix_multiplier] = c;
+        p.memo_status[matrix_multiplier] = true;
+        return (c.v == b.v);
+    }
 }
 
 //=============================================================================

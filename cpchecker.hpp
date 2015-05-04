@@ -839,8 +839,8 @@ check_vectors_for_goodness()
     vector<mm_vector_with_properties<NM>> nvwp; /// set of span vectors for SLAE
     vector<mm_vector_with_properties<NM>> gvwp; /// set of good vectors for SLAE
     Vectors_Presolve_Data<NM> v; /// vector presolve data for span vectors
-    Gauss_WP_Presolve_Data<NM> pwp; /// presolve data for SLAE for span vectors
-    Gauss_WP_Presolve_Data<NM> pwpg; /// presolve data for SLAE for good vectors
+    Gauss_WP_Presolve_Data<NM> pwp(f_count); /// presolve data for SLAE for span vectors
+    Gauss_WP_Presolve_Data<NM> pwpg(0); /// presolve data for SLAE for good vectors
 
     for (set<int>::iterator i = n_vectors_indexes.begin(); i != n_vectors_indexes.end(); ++i) {
         nvwp.push_back(m_vectors[*i]);
@@ -865,7 +865,7 @@ check_vectors_for_goodness()
             continue;
         }
         ++gaussian_eliminations;
-        if (gauss_wp_solve(pwp, m_vectors[i])) { // if vector is in the current span
+        if (gauss_wp_solve_fast_cached(pwp, m_vectors[i])) { // if vector is in the current span
             ++gaussian_eliminations;
             if (!gauss_wp_solve(pwpg, m_vectors[i])) { // if not linearly dependent
                 good_vectors_indexes.insert(i);
