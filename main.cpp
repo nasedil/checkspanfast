@@ -8,9 +8,9 @@
  * @version pre-alpha
  */
 
-//#define VERBOSE_OUTPUT /// output verbose information
-//#define VERY_DETAILED_OUTPUT /// output even more information
-//#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
+#define VERBOSE_OUTPUT /// output verbose information
+#define VERY_DETAILED_OUTPUT /// output even more information
+#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
 #define USE_CACHE
 

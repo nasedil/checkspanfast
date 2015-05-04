@@ -12,6 +12,7 @@
 #define SLAE_HPP_INCLUDED
 
 #include <vector>
+#include <map>
 
 #include <boost/dynamic_bitset.hpp>
 
@@ -46,7 +47,9 @@ class Gauss_WP_Presolve_Data;
 template <size_t N>
 bool gauss_wp_presolve(const vector<mm_vector_with_properties<N>>& a, Gauss_WP_Presolve_Data<N>& p);
 template <size_t N>
-bool gauss_wp_solve(const Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b);
+bool gauss_wp_solve(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b);
+template <size_t N>
+bool gauss_wp_solve_cached(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b);
 
 //=============================================================================
 
@@ -447,6 +450,7 @@ class Gauss_WP_Presolve_Data {
 public:
     vector<mm_vector_with_properties<N>> am; /// Transformed Matrix.
     vector<int> imi;
+    map<int, mm_vector_with_properties<N>> cache; /// cache with sums of vectors
 };
 
 /**
@@ -463,6 +467,7 @@ gauss_wp_presolve(const vector<mm_vector_with_properties<N>>& a, Gauss_WP_Presol
 {
     p.am = a;
     p.imi.clear();
+    p.cache.clear();
     for (typename vector<mm_vector_with_properties<N>>::iterator i = p.am.begin(); i != p.am.end();) { // for all columns
         int k = 0;
         while (((k < N) && (!(*i).v[k])) || (find(p.imi.begin(), p.imi.end(), k) != p.imi.end())) {
@@ -503,17 +508,43 @@ gauss_wp_presolve(const vector<mm_vector_with_properties<N>>& a, Gauss_WP_Presol
  */
 template <size_t N>
 bool
-gauss_wp_solve(const Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b)
+gauss_wp_solve(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b)
 {
     mm_vector_with_properties<N> c;
-    c.r.reset();
     typename vector<mm_vector_with_properties<N>>::const_iterator j = p.am.begin();
+    for (vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
+        if (b.v[*i]) {
+            c.v ^= (*j).v;
+        }
+        ++j;
+    }
+    return (c.v == b.v);
+}
+
+/**
+ * Sovle SLAE by Gaussian elimination using precomputed data using memoization.
+ *
+ * @param N: size of result and variable vectors.
+ *
+ * @param p: the presolve data;
+ * @param b: the resulting vector;
+ *
+ * @return if there is a solution.
+ */
+template <size_t N>
+bool
+gauss_wp_solve_cached(Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properties<N>& b)
+{
+    /*
+    c.r.reset();
+    j = p.am.begin();
     for (vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
         if (b.v[*i]) {
             c.r ^= (*j).r;
         }
         ++j;
     }
+    */
     // first check number of ones
     /*
     if (c.r.count() != b.r_count) {
@@ -521,15 +552,29 @@ gauss_wp_solve(const Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properti
     }
     */
     // then every bit
+    /*
     if (c.r != b.r)
         return false;
-    c.v.reset();
-    j = p.am.begin();
+    */
+    int matrix_multiplier = 0;
     for (vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
-        if (b.v[*i]) {
-            c.v ^= (*j).v;
+        matrix_multiplier <<= 1;
+        matrix_multiplier += b.v[*i];
+    }
+    typename map<int, mm_vector_with_properties<N>>::const_iterator memo_result = p.cache.find(matrix_multiplier);
+    if (memo_result != p.cache.end()) {
+        return (memo_result->second.v == b.v);
+    } else {
+        mm_vector_with_properties<N> c;
+        typename vector<mm_vector_with_properties<N>>::const_iterator j = p.am.begin();
+        for (vector<int>::const_iterator i = p.imi.begin(); i != p.imi.end(); ++i) {
+            if (b.v[*i]) {
+                c.v ^= (*j).v;
+            }
+            ++j;
         }
-        ++j;
+        p.cache[matrix_multiplier] = c;
+        return (c.v == b.v);
     }
     // first check number of ones
     /*
@@ -537,10 +582,6 @@ gauss_wp_solve(const Gauss_WP_Presolve_Data<N>& p, const mm_vector_with_properti
         return false;
     }
     */
-    // then every bit
-    if (c.v != b.v)
-        return false;
-    return true;
 }
 
 //=============================================================================
