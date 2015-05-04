@@ -1,0 +1,8 @@
+*.txt
+bin
+obj
+*.cbp
+*.depend
+*.save
+*.layout
+ValgrindOut.xml

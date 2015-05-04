@@ -155,7 +155,7 @@ void parallel_3x3(int limit)
     //master_checker->init(26);
     #pragma omp parallel
     {
-        int thread_count = omp_get_num_threads();
+        //int thread_count = omp_get_num_threads();
         Cube_Product_Checker<3, 2, 81, 9>* checker;
         //if (omp_get_thread_num() == 0) {
         //    checker = master_checker;
@@ -189,10 +189,16 @@ void parallel_2x2x2(int limit)
         }
         checker->thread_number = thread_number;
         if (checker->check_for_good_vectors_randomized()) {
+            *(checker->stop_signal) = true;
             cout << "Found after " << checker->iteration_count << " iterations.";
         }
-        delete checker;
+        // dump statistics
+        if (thread_number > 0) {
+            delete checker;
+        }
     }
+    #pragma omp barrier
+    delete master_checker;
 }
 
 void test(int n, int d, int t, int limit)

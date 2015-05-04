@@ -80,6 +80,7 @@ public:
     map<Candidate, int> candidate_cache; /// cache of already checked candidates
     int cache_limit; /// limit of the cache size
     int cache_hits; /// cache hits
+    bool* stop_signal; /// if execution should be stopped
 
     //=============--- constructors and destructors
     Cube_Product_Checker();
@@ -188,6 +189,7 @@ Cube_Product_Checker<N, D, NM, NMH>::
     if (owns_arrays) {
         delete [] r_vectors;
         delete [] m_vectors;
+        delete stop_signal;
     }
 }
 
@@ -204,6 +206,7 @@ Cube_Product_Checker<N, D, NM, NMH>::
 init(int mult_count, const string& filename)
 {
     f_count = mult_count;
+    stop_signal = new bool(false);
     r_vectors = new mm_vector_with_properties<NM>[element_count];
     m_vectors = new mm_vector_with_properties<NM>[m_count];
     mm_vector_with_properties<NM>::make_options(vector_options);
@@ -247,6 +250,7 @@ init(const Cube_Product_Checker& cpc)
     r_vectors = cpc.r_vectors;
     m_vectors = cpc.m_vectors;
     vector_options = cpc.vector_options;
+    stop_signal = cpc.stop_signal;
 }
 
 //=============================================================================
@@ -909,6 +913,8 @@ check_for_good_vectors()
         //cout << c1 << endl;
         for (int c2 = c1+1; c2 < m_count-1; ++c2) {
             for (int c3 = c2+1; c3 < m_count; ++c3) {
+                if (*stop_signal)
+                    return false;
                 clear_sets();
                 add_vector_to_set(c1);
                 add_vector_to_set(c2);
@@ -944,6 +950,8 @@ check_for_good_vectors()
                     for (int c5 = c4+1; c5 < m_count-2; ++c5)
                         for (int c6 = c5+1; c6 < m_count-1; ++c6)
                             for (int c7 = c6+1; c7 < m_count; ++c7) {
+                                if (*stop_signal)
+                                    return false;
                                 clear_sets();
                                 add_vector_to_set(c1);
                                 add_vector_to_set(c2);
@@ -972,8 +980,9 @@ check_for_good_vectors_randomized()
 {
     clear_statistics();
     while (true) {
+        if (*stop_signal)
+            return false;
         make_random_candidate();
-        cout << "I am random searcher " << thread_number << endl;
         if (check_vectors_for_goodness())
             return true;
     }
@@ -1086,9 +1095,10 @@ solve_hill_climbing(int local_max_limit)
         vector<Candidate> best_candidates;
         start_neighbourhood();
         for (const Candidate& c: neighbours) {
+            if (*stop_signal)
+                return false;
             n_vectors_indexes = c;
             good_vectors_indexes.clear();
-            cout << "I am hill climber" << endl;
             check_vectors_for_goodness();
             if (best_result > next_best_result) {
                 next_best_result = best_result;
@@ -1134,14 +1144,14 @@ Cube_Product_Checker<N, D, NM, NMH>::
 output_current_state() const
 {
     cout << endl;
-    cout << "=================" << endl;
-    cout << "Current state is:" << endl;
+    cout << "===================================================" << endl;
+    cout << "Current state of thread <" << thread_number << "> is:" << endl;
     cout << checked_sets_count << " checked sets" << endl;
     cout << restarts << " restarts" << endl;
     cout << iteration_count << " iterations" << endl;
     cout << lin_dependent_sets << " linearly dependent sets hits" << endl;
     cout << cache_hits << " cache hits" << endl;
-    cout << "=================" << endl;
+    cout << "===================================================" << endl;
 }
 
 //=============================================================================
