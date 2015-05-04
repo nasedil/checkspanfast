@@ -8,9 +8,9 @@
  * @version pre-alpha
  */
 
-#define VERBOSE_OUTPUT /// output verbose information
-#define VERY_DETAILED_OUTPUT /// output even more information
-#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
+//#define VERBOSE_OUTPUT /// output verbose information
+//#define VERY_DETAILED_OUTPUT /// output even more information
+//#define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
 #define USE_CACHE
 
@@ -223,6 +223,8 @@ void test(int n, int d, int t, int limit)
     cout << "Full search: " << tw.watch() << " s / "
               << checker->checked_sets_count << " checked sets" << endl;
     cout << "    " << checker->lin_dependent_sets << " linearly dependent sets" << endl;
+    cout << "    " << checker->bit_check_hits << " bit check hits" << endl;
+    cout << "    " << checker->gaussian_eliminations << " gaussian eliminations" << endl;
 #ifdef USE_CACHE
     cout << "    " << checker->cache_hits << " cache hits" << endl;
 #endif // USE_CACHE

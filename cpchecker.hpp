@@ -81,6 +81,8 @@ public:
     int cache_limit; /// limit of the cache size
     int cache_hits; /// cache hits
     bool* stop_signal; /// if execution should be stopped
+    int bit_check_hits; /// number of bit check hits
+    int gaussian_eliminations; /// number of gaussian eliminations
 
     //=============--- constructors and destructors
     Cube_Product_Checker();
@@ -171,6 +173,8 @@ Cube_Product_Checker() :
     m_count = power(m_length,dimension);
     cache_limit = 3000000;
     cache_hits = 0;
+    bit_check_hits = 0;
+    gaussian_eliminations = 0;
     rnd.init(0, m_count-1);
 #ifdef VERBOSE_OUTPUT
     cout << "Cube Product Checker has been created." << endl;
@@ -854,11 +858,15 @@ check_vectors_for_goodness()
         return false;
     }
     gauss_wp_presolve(gvwp, pwpg);
-
+    v.presolve();
     for (int i = 0; i < m_count; ++i) {
-        if (!v.check(m_vectors[i].v))
-            continue; // discard vector by checking bits
+        if (!v.check(m_vectors[i].v)) { // discard vector by checking bits
+            ++bit_check_hits;
+            continue;
+        }
+        ++gaussian_eliminations;
         if (gauss_wp_solve(pwp, m_vectors[i])) { // if vector is in the current span
+            ++gaussian_eliminations;
             if (!gauss_wp_solve(pwpg, m_vectors[i])) { // if not linearly dependent
                 good_vectors_indexes.insert(i);
                 gvwp.push_back(m_vectors[i]);
@@ -1150,6 +1158,8 @@ output_current_state() const
     cout << restarts << " restarts" << endl;
     cout << iteration_count << " iterations" << endl;
     cout << lin_dependent_sets << " linearly dependent sets hits" << endl;
+    cout << bit_check_hits << " bit check hits" << endl;
+    cout << gaussian_eliminations << " gaussian eliminations" << endl;
     cout << cache_hits << " cache hits" << endl;
     cout << "===================================================" << endl;
 }
