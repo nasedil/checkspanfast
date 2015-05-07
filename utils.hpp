@@ -296,6 +296,9 @@ bool Vectors_Presolve_Data<N>::check(const mm_bitset<N>& a) const
 int
 power(int a, int b)
 {
+    if (b == 0) {
+        return 1;
+    }
     int result = a;
     while (--b) {
         result *= a;
