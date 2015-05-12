@@ -13,6 +13,7 @@
 #define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
 #define USE_CACHE
+#define SAVE_BEST_RESULTS_TO_FILE
 
 #include <iostream>
 #include <string>
@@ -188,7 +189,8 @@ void parallel_2x2x2(int limit)
             checker->init(*master_checker);
         }
         checker->thread_number = thread_number;
-        if (checker->check_for_good_vectors_randomized()) {
+        //if (checker->check_for_good_vectors_randomized()) {
+        if (checker->solve_hill_climbing(limit)) {
             *(checker->stop_signal) = true;
             cout << "Found after " << checker->iteration_count << " iterations.";
         }

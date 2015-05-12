@@ -83,6 +83,8 @@ public:
     bool* stop_signal; /// if execution should be stopped
     int bit_check_hits; /// number of bit check hits
     int gaussian_eliminations; /// number of gaussian eliminations
+    set<set<int>> top_best_solutions; /// best solutions found so far
+    int top_best_result; /// best result so far
 
     //=============--- constructors and destructors
     Cube_Product_Checker();
@@ -864,9 +866,13 @@ check_vectors_for_goodness()
         //    ++bit_check_hits;
         //    continue;
         //}
+#ifdef OUTPUT_STATISTICS
         ++gaussian_eliminations;
+#endif // OUTPUT_STATISTICS
         if (gauss_wp_solve(pwp, m_vectors[i])) { // if vector is in the current span
+#ifdef OUTPUT_STATISTICS
             ++gaussian_eliminations;
+#endif // OUTPUT_STATISTICS
             if (!gauss_wp_solve(pwpg, m_vectors[i])) { // if not linearly dependent
                 good_vectors_indexes.insert(i);
                 gvwp.push_back(m_vectors[i]);
@@ -880,6 +886,28 @@ check_vectors_for_goodness()
     cout << "  [" << tw.watch() << " s] Done." << endl;
 #endif // VERY_DETAILED_OUTPUT
     best_result = good_vectors_indexes.size();
+    if (best_result > (f_count-element_count)) {
+        if (best_result >= top_best_result) {
+            if (best_result > top_best_result) {
+                top_best_result = best_result;
+                top_best_solutions.clear();
+#ifdef SAVE_BEST_RESULTS_TO_FILE
+                ofstream fout(to_string(thread_number)+string("bestsofar.txt"), ios_base::app);
+                fout << top_best_result << " vectors" << endl;
+                fout.close();
+#endif // SAVE_BEST_RESULTS_TO_FILE
+            }
+            top_best_solutions.insert(n_vectors_indexes);
+#ifdef SAVE_BEST_RESULTS_TO_FILE
+            ofstream fout(to_string(thread_number)+string("bestsofar.txt"), ios_base::app);
+            for (set<int>::iterator cc = n_vectors_indexes.begin(); cc != n_vectors_indexes.end(); ++cc) {
+                fout << *cc << " ";
+            }
+            fout << endl;
+            fout.close();
+#endif // SAVE_BEST_RESULTS_TO_FILE
+        }
+    }
 #ifdef USE_CACHE
         update_cache();
 #endif // USE_CACHE
