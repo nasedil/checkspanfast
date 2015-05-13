@@ -9,7 +9,7 @@
  */
 
 #define VERBOSE_OUTPUT /// output verbose information
-#define VERY_DETAILED_OUTPUT /// output even more information
+//#define VERY_DETAILED_OUTPUT /// output even more information
 #define OUTPUT_SOLUTIONS_TO_FILE /// output solutions to a file
 //#define OUTPUT_STATISTICS
 #define USE_CACHE
@@ -152,19 +152,19 @@ void parallel_2x2()
 
 void parallel_3x3(int limit)
 {
-    //Cube_Product_Checker<3, 2, 81, 9>* master_checker = new Cube_Product_Checker<3, 2, 81, 9>;
-    //master_checker->init(26);
+    Cube_Product_Checker<3, 2, 81, 9>* master_checker = new Cube_Product_Checker<3, 2, 81, 9>;
+    master_checker->init(23, "");
     #pragma omp parallel
     {
-        //int thread_count = omp_get_num_threads();
+        int thread_number = omp_get_thread_num();
         Cube_Product_Checker<3, 2, 81, 9>* checker;
-        //if (omp_get_thread_num() == 0) {
-        //    checker = master_checker;
-        //} else {
+        if (thread_number == 0) {
+            checker = master_checker;
+        } else {
             checker = new Cube_Product_Checker<3, 2, 81, 9>;
-        //    checker->init(master_checker);
-        checker->init(23, "");
-        //}
+            checker->init(*master_checker);
+        }
+        checker->thread_number = thread_number;
         if (checker->solve_hill_climbing(limit)) {
             cout << "Found after " << checker->restarts << " restarts and " << checker->checked_sets_count << " checks.";
         }
@@ -190,9 +190,16 @@ void parallel_2x2x2(int limit)
         }
         checker->thread_number = thread_number;
         //if (checker->check_for_good_vectors_randomized()) {
-        if (checker->solve_hill_climbing(limit)) {
-            *(checker->stop_signal) = true;
-            cout << "Found after " << checker->iteration_count << " iterations.";
+        if (thread_number % 2 == 0) {
+            if (checker->solve_hill_climbing(limit)) {
+                *(checker->stop_signal) = true;
+                cout << "Found after " << checker->iteration_count << " iterations.";
+            }
+        } else {
+            if (checker->solve_hill_climbing(limit)) {
+                *(checker->stop_signal) = true;
+                cout << "Found after " << checker->iteration_count << " iterations.";
+            }
         }
         // dump statistics
         if (thread_number > 0) {
@@ -231,6 +238,13 @@ void test(int n, int d, int t, int limit)
 #ifdef USE_CACHE
     cout << "    " << checker->cache_hits << " cache hits" << endl;
 #endif // USE_CACHE
+    int best_distribution[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    for (map<set<int>,int>::iterator cc = checker->candidate_cache.begin(); cc != checker->candidate_cache.end(); ++cc) {
+        best_distribution[(*cc).second]++;;
+    }
+    for (int i = 0; i < 8; ++i) {
+        cout << "        " << i << " guys are " << best_distribution[i] << endl;
+    }
     //----- test random search
     tw.watch();
     checked_sets_count = 0;
