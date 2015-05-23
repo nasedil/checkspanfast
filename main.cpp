@@ -82,7 +82,7 @@ int main(int argc ,char** argv)
 void temp()
 {
     Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
-    checker->init(7, "");
+    checker->init(7, "", "");
     checker->check_for_good_vectors();
     checker->save_results("./solutions-2x2.txt");
     bool all_right = true;
@@ -140,7 +140,7 @@ void parallel_2x2()
     #pragma omp parallel
     {
         Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
-        checker->init(7, "");
+        checker->init(7, "", "");
         if (checker->check_for_good_vectors_randomized()) {
             cout << "Found after " << checker->iteration_count << " iterations.";
         }
@@ -153,7 +153,7 @@ void parallel_2x2()
 void parallel_3x3(int limit)
 {
     Cube_Product_Checker<3, 2, 81, 9>* master_checker = new Cube_Product_Checker<3, 2, 81, 9>;
-    master_checker->init(23, "");
+    master_checker->init(23, "", "");
     #pragma omp parallel
     {
         int thread_number = omp_get_thread_num();
@@ -165,7 +165,7 @@ void parallel_3x3(int limit)
             checker->init(*master_checker);
         }
         checker->thread_number = thread_number;
-        if (checker->solve_hill_climbing(limit)) {
+        if (checker->solve_hill_climbing(limit, false)) {
             cout << "Found after " << checker->restarts << " restarts and " << checker->checked_sets_count << " checks.";
         }
         delete checker;
@@ -175,7 +175,7 @@ void parallel_3x3(int limit)
 void parallel_2x2x2(int limit)
 {
     Cube_Product_Checker<2, 3, 512, 8>* master_checker = new Cube_Product_Checker<2, 3, 512, 8>;
-    master_checker->init(15, "");
+    master_checker->init(15, "", "space.txt");
     //master_checker->write_m_vectors("mvectors.dat");
 
     #pragma omp parallel
@@ -191,12 +191,12 @@ void parallel_2x2x2(int limit)
         checker->thread_number = thread_number;
         //if (checker->check_for_good_vectors_randomized()) {
         if (thread_number % 2 == 0) {
-            if (checker->solve_hill_climbing(limit)) {
+            if (checker->solve_hill_climbing(limit, true)) {
                 *(checker->stop_signal) = true;
                 cout << "Found after " << checker->iteration_count << " iterations.";
             }
         } else {
-            if (checker->solve_hill_climbing(limit)) {
+            if (checker->solve_hill_climbing(limit, true)) {
                 *(checker->stop_signal) = true;
                 cout << "Found after " << checker->iteration_count << " iterations.";
             }
@@ -217,7 +217,7 @@ void test(int n, int d, int t, int limit)
         return;
     }
     Cube_Product_Checker<2, 2, 16, 4>* checker = new Cube_Product_Checker<2, 2, 16, 4>;
-    checker->init(7, "");
+    checker->init(7, "", "");
     Solution_Properties sp;
     Timewatch tw;
     int times = t;
@@ -277,7 +277,7 @@ void test(int n, int d, int t, int limit)
     iteration_count = 0;
     restarts = 0;
     for (int i = 0; i < times; ++i) {
-        checker->solve_hill_climbing(limit);
+        checker->solve_hill_climbing(limit, false);
         checked_sets_count += checker->checked_sets_count;
         lin_dependent_sets += checker->lin_dependent_sets;
         restarts += checker->restarts;

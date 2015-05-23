@@ -85,6 +85,7 @@ public:
     int gaussian_eliminations; /// number of gaussian eliminations
     set<set<int>> top_best_solutions; /// best solutions found so far
     int top_best_result; /// best result so far
+    set<set<int>> candidate_space; /// candidate space
 
     //=============--- constructors and destructors
     Cube_Product_Checker();
@@ -109,7 +110,7 @@ public:
     vector<int> decode_m_index(int index) const; /// return the coefficients from m-vector index
 
     //=============--- Initial calculations
-    void init(int mult_count, const string& filename); /// calculate all properties
+    void init(int mult_count, const string& filename, const string& space_filename); /// calculate all properties
     void init(const Cube_Product_Checker& cpc); /// Link to all properties in other object.
     void calculate_r_vectors(); /// write result vectors to array
     void calculate_m_vectors(); /// write multiplication vectors to array
@@ -120,13 +121,14 @@ public:
     bool check_vectors_for_goodness(); /// check current set of vectors
     void clear_statistics(); /// clear statistics of solutions
     void make_random_candidate(); /// make random candidate solution
+    void make_candidate_from_space(); /// make random candidate from restricted space
     bool check_cache(); /// check if candidate result is in cache
     void update_cache(); /// update the cache with new result
 
     //=============--- searching for solution
     bool check_for_good_vectors(); /// check all solution space
     bool check_for_good_vectors_randomized(); /// do random search
-    bool solve_hill_climbing(int local_max_limit); /// do local search
+    bool solve_hill_climbing(int local_max_limit, bool use_space); /// do local search
     void start_neighbourhood(); /// make list of neighbours
 
     //=============--- utilities
@@ -136,6 +138,7 @@ public:
     void read_samples_and_check(const char* filename, const char* filenameout) const; /// check sets from a file
     void output_current_state() const; // output current state of the checker
     void read_m_vectors(const string& filename); /// read m_vectors from file
+    void read_candidate_space(const string& filename); /// read candidate space from file
     void write_m_vectors(const string& filename); /// write m_vectors into file
 
     //=============--- Statistics and results
@@ -209,7 +212,7 @@ Cube_Product_Checker<N, D, NM, NMH>::
 template <int N, int D, size_t NM, size_t NMH>
 void
 Cube_Product_Checker<N, D, NM, NMH>::
-init(int mult_count, const string& filename)
+init(int mult_count, const string& filename, const string& space_filename)
 {
     f_count = mult_count;
     stop_signal = new bool(false);
@@ -235,6 +238,9 @@ init(int mult_count, const string& filename)
             m_vectors[i].calculate_properties(vector_options);
         }
     }
+    if (space_filename.length() > 0) {
+        read_candidate_space(space_filename);
+    }
 #ifdef VERBOSE_OUTPUT
     cout << "[" << tw.watch() << " s] Multiplication vectors calculated." << endl;
 #endif // VERBOSE_OUTPUT
@@ -257,6 +263,7 @@ init(const Cube_Product_Checker& cpc)
     m_vectors = cpc.m_vectors;
     vector_options = cpc.vector_options;
     stop_signal = cpc.stop_signal;
+    candidate_space = cpc.candidate_space;
 }
 
 //=============================================================================
@@ -771,6 +778,20 @@ make_random_candidate()
 //=============================================================================
 
 /**
+ * Make a random candidate.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+make_candidate_from_space()
+{
+    clear_sets();
+    n_vectors_indexes = (*candidate_space.begin());
+}
+
+//=============================================================================
+
+/**
  * If current candidate is in cache, than get info from cache.
  *
  * @return true if the current candidate is in cache.
@@ -1099,12 +1120,16 @@ start_neighbourhood()
 template <int N, int D, size_t NM, size_t NMH>
 bool
 Cube_Product_Checker<N, D, NM, NMH>::
-solve_hill_climbing(int local_max_limit)
+solve_hill_climbing(int local_max_limit, bool use_space)
 {
     Random r;
     clear_statistics();
     clear_sets();
-    make_random_candidate();
+    if (use_space) {
+        make_candidate_from_space();
+    } else {
+        make_random_candidate();
+    }
     check_vectors_for_goodness();
     local_max_iterations = 0;
     local_iterations = 0;
@@ -1115,7 +1140,11 @@ solve_hill_climbing(int local_max_limit)
             cout << omp_get_thread_num() << "] Doing restart! local iterations = " << local_iterations << " / " << iteration_count << endl;
 #endif // VERBOSE_OUTPUT
             clear_sets();
-            make_random_candidate();
+            if (use_space) {
+                make_candidate_from_space();
+            } else {
+                make_random_candidate();
+            }
             check_vectors_for_goodness();
             local_max_iterations = 0;
             local_iterations = 0;
@@ -1227,6 +1256,29 @@ read_m_vectors(const string& filename)
     for (int i = 0; i < m_count; ++i) {
         fin >> m_vectors[i].v >> m_vectors[i].r;
     }
+    fin.close();
+}
+
+//=============================================================================
+
+/**
+ * Read candidate space from file.
+ *
+ * @param filename: filename.
+ */
+template <int N, int D, size_t NM, size_t NMH>
+void
+Cube_Product_Checker<N, D, NM, NMH>::
+read_candidate_space(const string& filename)
+{
+    ifstream fin(filename);
+    set<int> candidate;
+    for (int i = 0; i < f_count-element_count; ++i) {
+        int v;
+        fin >> v;
+        candidate.insert(v);
+    }
+    candidate_space.insert(candidate);
     fin.close();
 }
 
