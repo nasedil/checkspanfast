@@ -1352,7 +1352,7 @@ save_random_samples(int size, const char* filename) const
 //=============================================================================
 
 /**
- * Reda a set sequence from the file and check it.
+ * Read a set sequence from the file and check it.
  *
  * @param filenamein: filename to read from;
  * @param filenameout: filename for output.
